@@ -44,3 +44,16 @@ export async function isWebSearchEnabledForTenant({
   const manifest = record?.manifest ?? DEFAULT_CONFIGURATION_MANIFEST;
   return manifest.web_search.enabled;
 }
+
+/** Whether agents in this tenant may use memory. Off stops memory for the whole tenant. Reads only. */
+export async function isMemoryEnabledForTenant({
+  tenant_id,
+  store,
+}: {
+  tenant_id: string;
+  store: IConfigurationStore;
+}): Promise<boolean> {
+  const record = await store.getConfiguration(tenant_id);
+  const manifest = record?.manifest ?? DEFAULT_CONFIGURATION_MANIFEST;
+  return manifest.memory.enabled;
+}

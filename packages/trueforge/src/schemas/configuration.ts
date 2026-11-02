@@ -9,9 +9,17 @@ const WebSearchConfigurationSchema = z
   .strict()
   .openapi('WebSearchConfiguration');
 
+const MemoryConfigurationSchema = z
+  .object({
+    enabled: z.boolean().describe('Whether agents in this tenant may remember details from past chats.'),
+  })
+  .strict()
+  .openapi('MemoryConfiguration');
+
 const ConfigurationManifestSchema = z
   .object({
     web_search: WebSearchConfigurationSchema,
+    memory: MemoryConfigurationSchema,
   })
   .strict()
   .openapi('ConfigurationManifest');
@@ -48,4 +56,5 @@ export type UpdateConfigurationRequest = z.infer<typeof UpdateConfigurationReque
 /** Written the first time a tenant is read or updated, so existing tenants keep every feature on. */
 export const DEFAULT_CONFIGURATION_MANIFEST: ConfigurationManifest = {
   web_search: { enabled: true },
+  memory: { enabled: true },
 };

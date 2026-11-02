@@ -14,7 +14,14 @@ import { auiInputClass } from '../lib/inputClasses.js';
 import { PopoverSelect } from '../primitives/PopoverSelect.js';
 import { Switch } from '../primitives/Switch.js';
 import { Tooltip } from '../primitives/Tooltip.js';
-import { WEB_SEARCH_ONE_WAY_OFF_HINT, WEB_SEARCH_UNAVAILABLE_HINT, webSearchGate } from './agentCapabilities.js';
+import {
+  MEMORY_ONE_WAY_OFF_HINT,
+  MEMORY_UNAVAILABLE_HINT,
+  memoryGate,
+  WEB_SEARCH_ONE_WAY_OFF_HINT,
+  WEB_SEARCH_UNAVAILABLE_HINT,
+  webSearchGate,
+} from './agentCapabilities.js';
 
 export type AgentRuntimeConfigFieldsProps = {
   value: AgentRuntimeConfig;
@@ -172,10 +179,17 @@ export function AgentRuntimeConfigFields({
     ...(webSearchLocked ? { disabledTooltip: capabilities?.webSearch?.reason ?? WEB_SEARCH_UNAVAILABLE_HINT } : {}),
     update: enabled => ({ ...value, webSearch: { enabled } }),
   };
+  const memoryChecked = value.memory?.enabled ?? false;
+  const { locked: memoryLocked, offIsFinal: memoryOffIsFinal } = memoryGate({
+    capabilities,
+    enabled: memoryChecked,
+  });
   const memoryField: RuntimeSwitchField = {
     label: 'Memory',
     description: 'Remember details from your past chats.',
-    checked: value.memory?.enabled ?? false,
+    checked: memoryChecked,
+    disabled: memoryLocked,
+    ...(memoryLocked ? { disabledTooltip: capabilities?.memory?.reason ?? MEMORY_UNAVAILABLE_HINT } : {}),
     update: enabled => ({ ...value, memory: { enabled } }),
   };
   const sandboxField: RuntimeSwitchField = {
@@ -316,7 +330,10 @@ export function AgentRuntimeConfigFields({
           {switchField({ field: webSearchField, className: rowClassName })}
           {webSearchOffIsFinal ? <RowWarning>{WEB_SEARCH_ONE_WAY_OFF_HINT}</RowWarning> : null}
         </div>
-        {switchField({ field: memoryField, className: cn('py-4', rowClassName) })}
+        <div className="py-4">
+          {switchField({ field: memoryField, className: rowClassName })}
+          {memoryOffIsFinal ? <RowWarning>{MEMORY_ONE_WAY_OFF_HINT}</RowWarning> : null}
+        </div>
         <section className="py-4">
           {switchField({ field: sandboxField, className: rowClassName })}
           {sandboxAvailable && !sandboxEnabled ? (

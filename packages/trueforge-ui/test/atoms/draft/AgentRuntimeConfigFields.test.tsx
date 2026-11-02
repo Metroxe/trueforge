@@ -18,6 +18,7 @@ function renderRuntimeFields({
   sandboxAvailable = true,
   hasSkills = false,
   webSearch,
+  memory,
   onChange = vi.fn(),
 }: {
   value?: AgentRuntimeConfig;
@@ -25,6 +26,7 @@ function renderRuntimeFields({
   sandboxAvailable?: boolean;
   hasSkills?: boolean;
   webSearch?: { enabled: boolean; reason?: string };
+  memory?: { enabled: boolean; reason?: string };
   onChange?: (val: AgentRuntimeConfig) => void;
 } = {}) {
   const environmentServer = createMockSandboxEnvironmentServer({
@@ -74,6 +76,7 @@ function renderRuntimeFields({
         sandbox: { enabled: true },
         skill: { enabled: true },
         ...(webSearch === undefined ? {} : { webSearch }),
+        ...(memory === undefined ? {} : { memory }),
       },
     }),
   });
@@ -238,6 +241,32 @@ describe('AgentRuntimeConfigFields', () => {
 
     fireEvent.click(memorySwitch);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ memory: { enabled: true } }));
+  });
+
+  it('locks memory off with the host reason when the tenant turned it off', async () => {
+    renderRuntimeFields({ memory: { enabled: false, reason: 'Memory is turned off for this tenant.' } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('switch', { name: 'Memory' })).toBeDisabled();
+    });
+    const memorySwitch = screen.getByRole('switch', { name: 'Memory' });
+    expect(memorySwitch).not.toBeChecked();
+
+    fireEvent.mouseEnter(memorySwitch.parentElement ?? memorySwitch);
+    expect(document.querySelector('[role="tooltip"]')).toHaveTextContent('Memory is turned off for this tenant.');
+  });
+
+  it('lets a spec with memory on turn it off while the tenant is off, and warns it is final', async () => {
+    const onChange = vi.fn();
+    renderRuntimeFields({ value: { memory: { enabled: true } }, memory: { enabled: false }, onChange });
+
+    const memorySwitch = screen.getByRole('switch', { name: 'Memory' });
+    expect(memorySwitch).toBeEnabled();
+    expect(memorySwitch).toBeChecked();
+    expect(await screen.findByText(/Memory is off for this tenant/)).toBeInTheDocument();
+
+    fireEvent.click(memorySwitch);
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ memory: { enabled: false } }));
   });
 
   it('shows a wire-only sandbox environment name and clears it when default is chosen', async () => {

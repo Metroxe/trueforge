@@ -31,11 +31,11 @@ describe('settings configuration router', () => {
     const response = await router.request('/');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      data: { manifest: { web_search: { enabled: true } }, updated_at: expect.any(String) },
+      data: { manifest: { web_search: { enabled: true }, memory: { enabled: true } }, updated_at: expect.any(String) },
     });
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toEqual({
       tenant_id: STANDALONE_REQUEST_CONTEXT.tenant_id,
-      manifest: { web_search: { enabled: true } },
+      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
       updated_at: expect.any(String),
     });
   });
@@ -46,13 +46,13 @@ describe('settings configuration router', () => {
     const patched = await router.request('/', patchInit({ web_search: { enabled: false } }));
     expect(patched.status).toBe(200);
     expect(await patched.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
     });
 
     const get = await router.request('/');
     expect(get.status).toBe(200);
     expect(await get.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
     });
   });
 
@@ -62,7 +62,7 @@ describe('settings configuration router', () => {
     const patched = await router.request('/', patchInit({ web_search: { enabled: false } }));
     expect(patched.status).toBe(200);
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
     });
   });
 
@@ -74,7 +74,18 @@ describe('settings configuration router', () => {
     expect(reEnabled.status).toBe(200);
 
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: true } },
+      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
+    });
+  });
+
+  it('PATCH turns memory off without touching web search', async () => {
+    const { router, store } = await createRouter();
+
+    const patched = await router.request('/', patchInit({ memory: { enabled: false } }));
+    expect(patched.status).toBe(200);
+
+    await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
+      manifest: { web_search: { enabled: true }, memory: { enabled: false } },
     });
   });
 
@@ -86,7 +97,7 @@ describe('settings configuration router', () => {
     expect(empty.status).toBe(200);
 
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
     });
   });
 
@@ -98,7 +109,10 @@ describe('settings configuration router', () => {
       getConfiguration: tenant => store.getConfiguration(tenant),
       upsertConfiguration: input => store.upsertConfiguration(input),
       getOrCreateConfiguration: async input => {
-        await store.upsertConfiguration({ tenant_id, manifest: { web_search: { enabled: false } } });
+        await store.upsertConfiguration({
+          tenant_id,
+          manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+        });
         return await store.getOrCreateConfiguration(input);
       },
     };
@@ -110,10 +124,10 @@ describe('settings configuration router', () => {
     const response = await router.request('/');
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
     });
     await expect(store.getConfiguration(tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
     });
   });
 

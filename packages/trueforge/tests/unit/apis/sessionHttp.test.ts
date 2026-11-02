@@ -896,7 +896,7 @@ describe('sessions HTTP agent binding', () => {
 
     await configurationStore.upsertConfiguration({
       tenant_id: 'default',
-      manifest: { web_search: { enabled: false } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
     });
     try {
       // The agent was saved while web search was allowed, so its stored spec is grandfathered.
@@ -914,7 +914,7 @@ describe('sessions HTTP agent binding', () => {
     } finally {
       await configurationStore.upsertConfiguration({
         tenant_id: 'default',
-        manifest: { web_search: { enabled: true } },
+        manifest: { web_search: { enabled: true }, memory: { enabled: true } },
       });
     }
 

@@ -15,7 +15,11 @@ import { HTTPException } from 'hono/http-exception';
 import { join } from 'node:path';
 import type { Logger } from 'winston';
 import configuration from '../config';
-import { isWebSearchEnabledForTenant, type IConfigurationStore } from '../db/configurationStore';
+import {
+  isMemoryEnabledForTenant,
+  isWebSearchEnabledForTenant,
+  type IConfigurationStore,
+} from '../db/configurationStore';
 import type { IMcpServerStore, IMcpServerWithAuthStore } from '../db/mcpServerStore';
 import type { IModelProviderStore } from '../db/modelProviderStore';
 import type { ISandboxEnvironmentStore } from '../db/sandboxEnvironmentStore';
@@ -363,6 +367,17 @@ export async function validateAgentSpec({
     if (!hasProvider) {
       throw new HTTPException(422, {
         message: 'web_search is enabled but no web-search provider is configured',
+      });
+    }
+  }
+
+  // Gates turning memory on; a spec saved with it on can still be edited after the switch flips.
+  if (spec.config.memory.enabled && previousSpec?.config.memory.enabled !== true) {
+    const tenantAllows = await isMemoryEnabledForTenant({ tenant_id, store: configurationStore });
+    if (!tenantAllows) {
+      throw new HTTPException(422, {
+        message:
+          'memory cannot be enabled because it is disabled for this tenant - an admin can re-enable it in settings',
       });
     }
   }

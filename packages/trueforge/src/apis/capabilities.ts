@@ -7,7 +7,11 @@ import {
   type RequestContext,
   type ResolveRequestContext,
 } from '../auth/identity';
-import { isWebSearchEnabledForTenant, type IConfigurationStore } from '../db/configurationStore';
+import {
+  isMemoryEnabledForTenant,
+  isWebSearchEnabledForTenant,
+  type IConfigurationStore,
+} from '../db/configurationStore';
 import type { ISandboxEnvironmentStore } from '../db/sandboxEnvironmentStore';
 import type { WithTransaction } from '../db/transaction';
 import type { IUserStore } from '../db/userStore';
@@ -73,12 +77,16 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
       hasTrueFoundrySandboxProviderConfig() ||
       status === 'ready' ||
       (defaultEnv === undefined && isLocalSandboxFallbackEnabled());
-    const [hasProvider, tenantAllowsWebSearch] = await Promise.all([
+    const [hasProvider, tenantAllowsWebSearch, tenantAllowsMemory] = await Promise.all([
       hasConfiguredWebSearchProvider({
         tenant_id: requestContext.tenant_id,
         store: deps.resolveWebSearchProviderStore(c),
       }),
       isWebSearchEnabledForTenant({
+        tenant_id: requestContext.tenant_id,
+        store: deps.resolveConfigurationStore(c),
+      }),
+      isMemoryEnabledForTenant({
         tenant_id: requestContext.tenant_id,
         store: deps.resolveConfigurationStore(c),
       }),
@@ -101,6 +109,12 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
           skill: sandboxEnabled ? { enabled: true } : { enabled: false, reason: skillDisabledReason(status) },
           settings: settingsCapability(requestContext),
           web_search: webSearchResponse,
+          memory: tenantAllowsMemory
+            ? { enabled: true }
+            : {
+                enabled: false,
+                reason: 'Memory is turned off for this tenant - an admin can turn it back on in settings.',
+              },
           session_sharing: { enabled: deps.userStore.supportsUserLookup },
         },
       },

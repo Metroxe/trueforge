@@ -98,11 +98,13 @@ describe('capabilities routers', () => {
     authenticator = new StandaloneAuthenticator(),
     webSearchStore,
     tenantWebSearchEnabled = true,
+    tenantMemoryEnabled = true,
     userStore = new EmptyUserStore(),
   }: {
     authenticator?: Authenticator;
     webSearchStore?: IWebSearchProviderStore;
     tenantWebSearchEnabled?: boolean;
+    tenantMemoryEnabled?: boolean;
     userStore?: IUserStore;
   } = {}): OpenAPIHono {
     const db = createSqliteDb(':memory:');
@@ -114,7 +116,7 @@ describe('capabilities routers', () => {
       getConfiguration: () =>
         Promise.resolve({
           tenant_id: 'default',
-          manifest: { web_search: { enabled: tenantWebSearchEnabled } },
+          manifest: { web_search: { enabled: tenantWebSearchEnabled }, memory: { enabled: tenantMemoryEnabled } },
           updated_at: '2026-01-01T00:00:00.000Z',
         }),
       upsertConfiguration: () => Promise.reject(new Error('not used')),
@@ -154,6 +156,7 @@ describe('capabilities routers', () => {
         },
         settings: ALL_SETTINGS_ON,
         web_search: { enabled: false, reason: NO_PROVIDER_REASON },
+        memory: { enabled: true },
         session_sharing: { enabled: false },
       },
     });
@@ -203,6 +206,22 @@ describe('capabilities routers', () => {
     });
   });
 
+  it('reports memory disabled with a reason when the tenant turned it off', async () => {
+    disableOidcAuth();
+    const router = makeRouter({ tenantMemoryEnabled: false });
+
+    const response = await router.request('/');
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      data: {
+        memory: {
+          enabled: false,
+          reason: 'Memory is turned off for this tenant - an admin can turn it back on in settings.',
+        },
+      },
+    });
+  });
+
   it('reports sharing with users only when a user source is configured', async () => {
     disableOidcAuth();
     const peekUsers = () => Promise.reject(new Error('not used'));
@@ -234,6 +253,7 @@ describe('capabilities routers', () => {
         skill: { enabled: true },
         settings: ALL_SETTINGS_ON,
         web_search: { enabled: false, reason: NO_PROVIDER_REASON },
+        memory: { enabled: true },
         session_sharing: { enabled: false },
       },
     });
@@ -252,6 +272,7 @@ describe('capabilities routers', () => {
         skill: { enabled: true },
         settings: ALL_SETTINGS_ON,
         web_search: { enabled: false, reason: NO_PROVIDER_REASON },
+        memory: { enabled: true },
         session_sharing: { enabled: false },
       },
     });
@@ -407,6 +428,7 @@ describe('capabilities routers', () => {
           },
           settings: ALL_SETTINGS_ON,
           web_search: { enabled: false, reason: NO_PROVIDER_REASON },
+          memory: { enabled: true },
           session_sharing: { enabled: false },
         },
       });
@@ -424,6 +446,7 @@ describe('capabilities routers', () => {
           },
           settings: ALL_SETTINGS_OFF,
           web_search: { enabled: false, reason: NO_PROVIDER_REASON },
+          memory: { enabled: true },
           session_sharing: { enabled: false },
         },
       });

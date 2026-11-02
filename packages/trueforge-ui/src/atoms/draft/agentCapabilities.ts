@@ -32,3 +32,24 @@ export function webSearchGate({
   const available = capabilities.webSearch?.enabled === true;
   return { locked: !available && !enabled, offIsFinal: enabled && !available };
 }
+
+export const MEMORY_UNAVAILABLE_HINT = 'Memory is turned off for this tenant';
+
+/** Shown while a spec keeps memory the tenant no longer allows, so the last turn-off is final. */
+export const MEMORY_ONE_WAY_OFF_HINT =
+  'Memory is off for this tenant. Turning it off here is final until an admin turns it back on.';
+
+/** Like `webSearchGate`, but a host that does not report memory leaves it open. */
+export function memoryGate({
+  capabilities,
+  enabled,
+}: {
+  capabilities: { memory?: { enabled: boolean } | undefined } | null;
+  enabled: boolean;
+}): { locked: boolean; offIsFinal: boolean } {
+  if (capabilities == null) {
+    return { locked: false, offIsFinal: false };
+  }
+  const available = capabilities.memory?.enabled !== false;
+  return { locked: !available && !enabled, offIsFinal: enabled && !available };
+}

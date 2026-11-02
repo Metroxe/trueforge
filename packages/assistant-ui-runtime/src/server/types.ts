@@ -481,6 +481,8 @@ export interface AgentBuilderCapabilitiesResponse {
     skill: { enabled: boolean; reason?: string };
     settings?: SettingsCapability;
     webSearch?: { enabled: boolean; reason?: string };
+    /** Whether agents may turn memory on; `reason` explains a locked toggle. */
+    memory?: { enabled: boolean; reason?: string };
     /** Present when the host reports session sharing; `enabled` gates invite-by-user. */
     sessionSharing?: { enabled: boolean };
   };
@@ -919,11 +921,13 @@ export interface TenantConfigurationSwitch {
 /** Tenant-wide feature switches an admin controls, independent of any provider catalog. */
 export interface TenantConfiguration {
   webSearch: TenantConfigurationSwitch;
+  memory: TenantConfigurationSwitch;
 }
 
 export interface UpdateTenantConfigurationRequest {
   /** Omit a switch to leave it as stored. */
   webSearch?: TenantConfigurationSwitch;
+  memory?: TenantConfigurationSwitch;
 }
 
 /**

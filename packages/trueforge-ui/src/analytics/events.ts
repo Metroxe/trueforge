@@ -48,6 +48,7 @@ export const AnalyticsEvents = {
     SANDBOX_PROVIDER_DELETED: 'trueforge.settings.sandbox_provider_deleted',
     WEB_SEARCH_PROVIDER_SAVED: 'trueforge.settings.web_search_provider_saved',
     WEB_SEARCH_TENANT_TOGGLED: 'trueforge.settings.web_search_tenant_toggled',
+    MEMORY_TENANT_TOGGLED: 'trueforge.settings.memory_tenant_toggled',
   },
   Library: {
     OPENED: 'trueforge.library.opened',
