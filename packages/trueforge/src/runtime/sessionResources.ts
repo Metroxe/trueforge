@@ -22,7 +22,6 @@ import type { ISandboxProviderStore } from '../db/sandboxProviderStore';
 import type { ISkillStore } from '../db/skillStore';
 import type { TurnMetadata } from '../db/turnMetadata';
 import type { IWebSearchProviderStore } from '../db/webSearchProviderStore';
-import { isMemoryEnabledForTenant } from '../memory/availability';
 import { LocalSandboxProvider } from '../sandbox/local/provider/LocalSandboxProvider';
 import { getCachedLocalSandboxSupport, isLocalSandboxFallbackEnabled } from '../sandbox/localRuntime';
 import {
@@ -351,9 +350,5 @@ export async function validateAgentSpec({
         message: 'web_search is enabled but no web-search provider is configured',
       });
     }
-  }
-
-  if (spec.config.memory.enabled && !isMemoryEnabledForTenant(tenant_id)) {
-    throw new HTTPException(422, { message: 'memory is enabled but memory is not available for this tenant' });
   }
 }

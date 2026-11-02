@@ -13,10 +13,6 @@ import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkill
 import { SqliteWebSearchProviderStore } from '../../../src/db/sqlite/web-search-provider-store/SqliteWebSearchProviderStore';
 import { ListAgentsResponseSchema } from '../../../src/schemas/agent';
 
-jest.mock('../../../src/memory/availability', () => ({
-  isMemoryEnabledForTenant: jest.fn(() => true),
-}));
-
 const modelProvider = {
   type: 'anthropic' as const,
   base_url: 'https://api.anthropic.com/v1',

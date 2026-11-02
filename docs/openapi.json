@@ -491,9 +491,6 @@
       },
       "CapabilitiesData": {
         "properties": {
-          "memory": {
-            "$ref": "#/components/schemas/MemoryCapability"
-          },
           "sandbox": {
             "$ref": "#/components/schemas/SandboxCapability"
           },
@@ -515,7 +512,6 @@
           "skill",
           "settings",
           "web_search",
-          "memory",
           "session_sharing"
         ],
         "type": "object"
@@ -2766,18 +2762,6 @@
           "oidc-connected"
         ],
         "type": "string"
-      },
-      "MemoryCapability": {
-        "properties": {
-          "enabled": {
-            "description": "Whether agents can turn on `config.memory`: memory is enabled and the tenant is allowlisted.",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "enabled"
-        ],
-        "type": "object"
       },
       "MemoryConfig": {
         "default": {

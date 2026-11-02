@@ -465,8 +465,6 @@ export interface AgentBuilderCapabilitiesResponse {
     skill: { enabled: boolean; reason?: string };
     settings?: { enabled: boolean };
     webSearch?: { enabled: boolean };
-    /** `enabled` is false unless memory is on and the tenant is allowlisted. */
-    memory?: { enabled: boolean };
     /** Present when the host reports session sharing; `enabled` gates invite-by-user. */
     sessionSharing?: { enabled: boolean };
   };

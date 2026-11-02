@@ -17,14 +17,12 @@ function renderRuntimeFields({
   layout = 'detailed',
   sandboxAvailable = true,
   hasSkills = false,
-  memoryAvailable = false,
   onChange = vi.fn(),
 }: {
   value?: AgentRuntimeConfig;
   layout?: 'compact' | 'detailed';
   sandboxAvailable?: boolean;
   hasSkills?: boolean;
-  memoryAvailable?: boolean;
   onChange?: (val: AgentRuntimeConfig) => void;
 } = {}) {
   const environmentServer = createMockSandboxEnvironmentServer({
@@ -77,7 +75,6 @@ function renderRuntimeFields({
         value={value}
         sandboxAvailable={sandboxAvailable}
         hasSkills={hasSkills}
-        memoryAvailable={memoryAvailable}
         layout={layout}
         onChange={onChange}
       />
@@ -162,9 +159,9 @@ describe('AgentRuntimeConfigFields', () => {
     expect(missing).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('toggles memory when memory is available', () => {
+  it('toggles memory', () => {
     const onChange = vi.fn();
-    renderRuntimeFields({ memoryAvailable: true, onChange });
+    renderRuntimeFields({ onChange });
 
     const memorySwitch = screen.getByRole('switch', { name: 'Memory' });
     expect(memorySwitch).not.toBeDisabled();
@@ -172,20 +169,6 @@ describe('AgentRuntimeConfigFields', () => {
 
     fireEvent.click(memorySwitch);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ memory: { enabled: true } }));
-  });
-
-  it('hides memory when memory is unavailable', () => {
-    renderRuntimeFields();
-
-    expect(screen.queryByRole('switch', { name: 'Memory' })).not.toBeInTheDocument();
-  });
-
-  it('lets an agent that still has memory on switch it off when memory is unavailable', () => {
-    const onChange = vi.fn();
-    renderRuntimeFields({ value: { sandbox: { enabled: true }, memory: { enabled: true } }, onChange });
-
-    fireEvent.click(screen.getByRole('switch', { name: 'Memory' }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ memory: { enabled: false } }));
   });
 
   it('shows a wire-only sandbox environment name and clears it when default is chosen', async () => {

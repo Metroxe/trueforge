@@ -28,15 +28,11 @@ describe('runtimeConfigSummary', () => {
     ).toEqual({ label: 'web search', value: 'off' });
   });
 
-  it('includes memory defaulting to off when memory is available', () => {
-    expect(runtimeConfigSummary({}, { memoryAvailable: true }).find(entry => entry.label === 'memory')).toEqual({
+  it('includes memory defaulting to off', () => {
+    expect(runtimeConfigSummary({}).find(entry => entry.label === 'memory')).toEqual({
       label: 'memory',
       value: 'off',
     });
-  });
-
-  it('omits memory when unavailable unless the agent still has it on', () => {
-    expect(runtimeConfigSummary({}).map(entry => entry.label)).not.toContain('memory');
     expect(runtimeConfigSummary({ memory: { enabled: true } }).find(entry => entry.label === 'memory')).toEqual({
       label: 'memory',
       value: 'on',

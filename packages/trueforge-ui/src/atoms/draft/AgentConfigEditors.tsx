@@ -23,7 +23,6 @@ export type AgentConfigEditorsProps = {
   skillsDisabled?: boolean;
   sandboxAvailable?: boolean;
   webSearchAvailable?: boolean;
-  memoryAvailable?: boolean;
   instructions?: string;
   onInstructionsSave?: (draft: AgentInstructionsDraft) => void;
   loadMcpConnector?: (connectorId: string) => Promise<ConnectorState | undefined>;
@@ -44,7 +43,6 @@ export function AgentConfigEditors({
   skillsDisabled = false,
   sandboxAvailable = false,
   webSearchAvailable = false,
-  memoryAvailable = false,
   instructions,
   onInstructionsSave,
   loadMcpConnector,
@@ -234,7 +232,6 @@ export function AgentConfigEditors({
           spec={spec}
           sandboxAvailable={sandboxAvailable}
           webSearchAvailable={webSearchAvailable}
-          memoryAvailable={memoryAvailable}
           onChange={onChange}
           onClose={close}
         />

@@ -3,7 +3,6 @@
 import type * as TrueForge from "../../api/index.js";
 import * as core from "../../core/index.js";
 import type * as serializers from "../index.js";
-import { MemoryCapability } from "./MemoryCapability.js";
 import { SandboxCapability } from "./SandboxCapability.js";
 import { SessionSharingCapability } from "./SessionSharingCapability.js";
 import { SettingsCapability } from "./SettingsCapability.js";
@@ -14,7 +13,6 @@ export const CapabilitiesData: core.serialization.ObjectSchema<
     serializers.CapabilitiesData.Raw,
     TrueForge.CapabilitiesData
 > = core.serialization.object({
-    memory: MemoryCapability,
     sandbox: SandboxCapability,
     sessionSharing: core.serialization.property("session_sharing", SessionSharingCapability),
     settings: SettingsCapability,
@@ -24,7 +22,6 @@ export const CapabilitiesData: core.serialization.ObjectSchema<
 
 export declare namespace CapabilitiesData {
     export interface Raw {
-        memory: MemoryCapability.Raw;
         sandbox: SandboxCapability.Raw;
         session_sharing: SessionSharingCapability.Raw;
         settings: SettingsCapability.Raw;

@@ -1072,13 +1072,6 @@ export type DistributedServerConfiguration = SharedServerConfiguration & {
   TRUEFOUNDRY_WEB_SEARCH_PROVIDER: TrueFoundryWebSearchProviderEnv | undefined;
   TRUEFOUNDRY_AUTH_SERVER_URL: string | undefined;
   TRUEFOUNDRY_TENANT_NAME: string | undefined;
-  /** Long-term memory (TrueFoundry mode only). Env: `MEMORY_ENABLED`. Default false. */
-  MEMORY_ENABLED: boolean;
-  /**
-   * Tenants that get memory while `MEMORY_ENABLED`; every other tenant has none. JSON string array
-   * of tenant ids. Env: `MEMORY_TENANT_ALLOWLIST`. Default empty (no tenant).
-   */
-  MEMORY_TENANT_ALLOWLIST: string[];
 };
 
 export type ServerConfiguration = StandaloneServerConfiguration | DistributedServerConfiguration;
@@ -1397,15 +1390,6 @@ const configuration: ServerConfiguration = standalone
       ),
       TRUEFOUNDRY_AUTH_SERVER_URL: getEnv('TRUEFOUNDRY_AUTH_SERVER_URL', { required: false }),
       TRUEFOUNDRY_TENANT_NAME: getEnv('TRUEFOUNDRY_TENANT_NAME', { required: false }),
-      MEMORY_ENABLED: parseBoolean({
-        envKey: 'MEMORY_ENABLED',
-        raw: getEnv('MEMORY_ENABLED'),
-        defaultValue: false,
-      }),
-      MEMORY_TENANT_ALLOWLIST: parseJsonStringArrayEnv({
-        envKey: 'MEMORY_TENANT_ALLOWLIST',
-        raw: getEnv('MEMORY_TENANT_ALLOWLIST'),
-      }),
     };
 
 export function isOidcConfigured(

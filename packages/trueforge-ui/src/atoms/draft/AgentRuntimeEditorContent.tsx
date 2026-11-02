@@ -7,7 +7,6 @@ export type AgentRuntimeEditorContentProps = {
   spec: AgentSpec;
   sandboxAvailable: boolean;
   webSearchAvailable?: boolean;
-  memoryAvailable?: boolean;
   onChange: (spec: AgentSpec) => void;
 };
 
@@ -15,7 +14,6 @@ export function AgentRuntimeEditorContent({
   spec,
   sandboxAvailable,
   webSearchAvailable = false,
-  memoryAvailable = false,
   onChange,
 }: AgentRuntimeEditorContentProps) {
   const AgentRuntimeConfigFields = useSlot('AgentRuntimeConfigFields');
@@ -26,7 +24,6 @@ export function AgentRuntimeEditorContent({
         value={spec.config ?? {}}
         sandboxAvailable={sandboxAvailable}
         webSearchAvailable={webSearchAvailable}
-        memoryAvailable={memoryAvailable}
         hasSkills={(spec.skills?.length ?? 0) > 0}
         layout="detailed"
         onChange={config => onChange({ ...spec, config })}

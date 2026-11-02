@@ -10,7 +10,6 @@ import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-en
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
 import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkillStore';
 import { SqliteWebSearchProviderStore } from '../../../src/db/sqlite/web-search-provider-store/SqliteWebSearchProviderStore';
-import { isMemoryEnabledForTenant } from '../../../src/memory/availability';
 import { getModelDetails, localSandboxSessionSegment, validateAgentSpec } from '../../../src/runtime/sessionResources';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { ReasoningEffort } from '../../../src/schemas/modelProvider';
@@ -18,9 +17,6 @@ import { hasConfiguredWebSearchProvider } from '../../../src/websearch/providers
 
 jest.mock('../../../src/websearch/providers', () => ({
   hasConfiguredWebSearchProvider: jest.fn(() => Promise.resolve(false)),
-}));
-jest.mock('../../../src/memory/availability', () => ({
-  isMemoryEnabledForTenant: jest.fn(() => false),
 }));
 
 describe('localSandboxSessionSegment', () => {
@@ -260,33 +256,6 @@ describe('validateAgentSpec', () => {
         ...stores,
       }),
     ).resolves.toBeUndefined();
-  });
-
-  it.each([
-    [false, 'rejects'],
-    [true, 'admits'],
-  ])('memory.enabled with tenant memory available=%s %s the spec', async available => {
-    const stores = await setup();
-    jest.mocked(isMemoryEnabledForTenant).mockReturnValueOnce(available);
-    const result = validateAgentSpec({
-      spec: AgentSpecSchema.parse({
-        model: { name: 'test-provider/test-model' },
-        instructions: 'test',
-        config: { memory: { enabled: true } },
-      }),
-      tenant_id: 'default',
-      created_by_subject_id: 'test-subject',
-      ...stores,
-    });
-    if (available) {
-      await expect(result).resolves.toBeUndefined();
-    } else {
-      await expect(result).rejects.toMatchObject({
-        status: 422,
-        message: 'memory is enabled but memory is not available for this tenant',
-      } satisfies Partial<HTTPException>);
-    }
-    expect(isMemoryEnabledForTenant).toHaveBeenCalledWith('default');
   });
 
   it('rejects skills when no sandbox provider is configured', async () => {

@@ -16,12 +16,8 @@ export function runtimeConfigValueClassName(value: string): string {
 
 export function runtimeConfigSummary(
   config?: AgentRuntimeConfig,
-  {
-    webSearchAvailable = false,
-    memoryAvailable = false,
-  }: { webSearchAvailable?: boolean; memoryAvailable?: boolean } = {},
+  { webSearchAvailable = false }: { webSearchAvailable?: boolean } = {},
 ): RuntimeConfigSummaryEntry[] {
-  const memoryEnabled = config?.memory?.enabled ?? false;
   return [
     { label: 'iteration limit', value: String(config?.iterationLimit ?? 512) },
     { label: 'sandbox', value: enabledLabel(config?.sandbox?.enabled, false) },
@@ -33,7 +29,7 @@ export function runtimeConfigSummary(
     { label: 'dynamic sub-agents', value: enabledLabel(config?.dynamicSubAgents?.enabled, true) },
     { label: 'generative UI', value: enabledLabel(config?.generativeUi?.enabled, true) },
     { label: 'ask user questions', value: enabledLabel(config?.askUserQuestions?.enabled, true) },
-    ...(memoryAvailable || memoryEnabled ? [{ label: 'memory', value: enabledLabel(memoryEnabled, false) }] : []),
+    { label: 'memory', value: enabledLabel(config?.memory?.enabled, false) },
     ...(webSearchAvailable ? [{ label: 'web search', value: enabledLabel(config?.webSearch?.enabled, true) }] : []),
   ];
 }
