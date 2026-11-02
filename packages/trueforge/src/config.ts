@@ -916,6 +916,13 @@ export interface SharedServerConfiguration {
   SENTRY_ENABLED: boolean;
   SENTRY_DSN: string | undefined;
   SENTRY_ADDITIONAL_TAGS: Record<string, string>;
+  /** Offer long-term memory. Env: `TRUEFOUNDRY_MEMORY_ENABLED`. Default false. */
+  TRUEFOUNDRY_MEMORY_ENABLED: boolean;
+  /**
+   * Tenants that get memory while `TRUEFOUNDRY_MEMORY_ENABLED`; every other tenant has none. JSON
+   * string array of tenant ids. Env: `TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST`. Unset or empty: every tenant.
+   */
+  TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST: string[];
 }
 
 export type StandaloneServerConfiguration = SharedServerConfiguration & {
@@ -1072,13 +1079,6 @@ export type DistributedServerConfiguration = SharedServerConfiguration & {
   TRUEFOUNDRY_WEB_SEARCH_PROVIDER: TrueFoundryWebSearchProviderEnv | undefined;
   TRUEFOUNDRY_AUTH_SERVER_URL: string | undefined;
   TRUEFOUNDRY_TENANT_NAME: string | undefined;
-  /** When TrueFoundry mode is on, offer long-term memory. Env: `TRUEFOUNDRY_MEMORY_ENABLED`. Default false. */
-  TRUEFOUNDRY_MEMORY_ENABLED: boolean;
-  /**
-   * Tenants that get memory while `TRUEFOUNDRY_MEMORY_ENABLED`; every other tenant has none. JSON
-   * string array of tenant ids. Env: `TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST`. Unset or empty: every tenant.
-   */
-  TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST: string[];
 };
 
 export type ServerConfiguration = StandaloneServerConfiguration | DistributedServerConfiguration;
@@ -1151,6 +1151,15 @@ const shared: SharedServerConfiguration = {
     envKey: 'SANDBOX_ENVIRONMENT_DISK_GIB_MAX',
     raw: getEnv('SANDBOX_ENVIRONMENT_DISK_GIB_MAX'),
     defaultValue: 10,
+  }),
+  TRUEFOUNDRY_MEMORY_ENABLED: parseBoolean({
+    envKey: 'TRUEFOUNDRY_MEMORY_ENABLED',
+    raw: getEnv('TRUEFOUNDRY_MEMORY_ENABLED'),
+    defaultValue: false,
+  }),
+  TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST: parseJsonStringArrayEnv({
+    envKey: 'TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST',
+    raw: getEnv('TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST'),
   }),
   MAX_REQUEST_BODY_BYTES: parsePositiveInt({
     envKey: 'MAX_REQUEST_BODY_BYTES',
@@ -1397,15 +1406,6 @@ const configuration: ServerConfiguration = standalone
       ),
       TRUEFOUNDRY_AUTH_SERVER_URL: getEnv('TRUEFOUNDRY_AUTH_SERVER_URL', { required: false }),
       TRUEFOUNDRY_TENANT_NAME: getEnv('TRUEFOUNDRY_TENANT_NAME', { required: false }),
-      TRUEFOUNDRY_MEMORY_ENABLED: parseBoolean({
-        envKey: 'TRUEFOUNDRY_MEMORY_ENABLED',
-        raw: getEnv('TRUEFOUNDRY_MEMORY_ENABLED'),
-        defaultValue: false,
-      }),
-      TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST: parseJsonStringArrayEnv({
-        envKey: 'TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST',
-        raw: getEnv('TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST'),
-      }),
     };
 
 export function isOidcConfigured(
