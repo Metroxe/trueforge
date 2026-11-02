@@ -8,6 +8,10 @@ from ..core.unchecked_base_model import UncheckedBaseModel
 
 
 class MemoryCapability(UncheckedBaseModel):
+    """
+    Present only when memory is offered to this tenant; absent means memory settings are hidden.
+    """
+
     enabled: bool = pydantic.Field()
     """
     Whether agents may turn memory on: the tenant allows it.

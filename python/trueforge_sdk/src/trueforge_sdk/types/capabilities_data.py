@@ -14,7 +14,7 @@ from .web_search_capability import WebSearchCapability
 
 
 class CapabilitiesData(UncheckedBaseModel):
-    memory: MemoryCapability
+    memory: typing.Optional[MemoryCapability] = None
     sandbox: SandboxCapability
     session_sharing: SessionSharingCapability
     settings: SettingsCapability

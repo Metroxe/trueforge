@@ -14,7 +14,7 @@ export const CapabilitiesData: core.serialization.ObjectSchema<
     serializers.CapabilitiesData.Raw,
     TrueForge.CapabilitiesData
 > = core.serialization.object({
-    memory: MemoryCapability,
+    memory: MemoryCapability.optional(),
     sandbox: SandboxCapability,
     sessionSharing: core.serialization.property("session_sharing", SessionSharingCapability),
     settings: SettingsCapability,
@@ -24,7 +24,7 @@ export const CapabilitiesData: core.serialization.ObjectSchema<
 
 export declare namespace CapabilitiesData {
     export interface Raw {
-        memory: MemoryCapability.Raw;
+        memory?: MemoryCapability.Raw | null;
         sandbox: SandboxCapability.Raw;
         session_sharing: SessionSharingCapability.Raw;
         settings: SettingsCapability.Raw;

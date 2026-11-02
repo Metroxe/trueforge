@@ -515,7 +515,6 @@
           "skill",
           "settings",
           "web_search",
-          "memory",
           "session_sharing"
         ],
         "type": "object"
@@ -2825,6 +2824,7 @@
         "type": "string"
       },
       "MemoryCapability": {
+        "description": "Present only when memory is offered to this tenant; absent means memory settings are hidden.",
         "properties": {
           "enabled": {
             "description": "Whether agents may turn memory on: the tenant allows it.",
