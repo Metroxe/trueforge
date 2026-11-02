@@ -7,16 +7,13 @@ import { SqliteAgentStore } from '../../../src/db/sqlite/agent-store/SqliteAgent
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteConfigurationStore } from '../../../src/db/sqlite/configuration-store/SqliteConfigurationStore';
 import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
+import { SqliteMemoryProviderStore } from '../../../src/db/sqlite/memory-provider-store/SqliteMemoryProviderStore';
 import { SqliteModelProviderStore } from '../../../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-environment-store/SqliteSandboxEnvironmentStore';
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
 import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkillStore';
 import { SqliteWebSearchProviderStore } from '../../../src/db/sqlite/web-search-provider-store/SqliteWebSearchProviderStore';
 import { ListAgentsResponseSchema } from '../../../src/schemas/agent';
-
-jest.mock('../../../src/memory/availability', () => ({
-  isMemoryOfferedToTenant: jest.fn(() => true),
-}));
 
 const modelProvider = {
   type: 'anthropic' as const,
@@ -104,6 +101,10 @@ describe('agents router', () => {
     await migrateSqliteToLatest(db);
     const modelProviderStore = new SqliteModelProviderStore(db);
     await modelProviderStore.upsertProvider({ tenant_id: 'default', name: 'anthropic', manifest: modelProvider });
+    await new SqliteMemoryProviderStore(db).upsertProvider({
+      tenant_id: 'default',
+      manifest: { type: 'zep', auth: { api_key: 'zep-test-key' } },
+    });
     const agentStore = new SqliteAgentStore(db);
     router = createAgentsRouter({
       resolveAgentStore: () => agentStore,
@@ -113,6 +114,7 @@ describe('agents router', () => {
       resolveSandboxProviderStore: () => new SqliteSandboxProviderStore(db),
       sandboxEnvironmentStore: new SqliteSandboxEnvironmentStore(db),
       resolveWebSearchProviderStore: () => new SqliteWebSearchProviderStore(db),
+      resolveMemoryProviderStore: () => new SqliteMemoryProviderStore(db),
       resolveConfigurationStore: () => new SqliteConfigurationStore(db),
       withTransaction: callback => db.transaction().execute(callback),
       resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
@@ -126,6 +128,7 @@ describe('agents router', () => {
       resolveSandboxProviderStore: () => new SqliteSandboxProviderStore(db),
       sandboxEnvironmentStore: new SqliteSandboxEnvironmentStore(db),
       resolveWebSearchProviderStore: () => new SqliteWebSearchProviderStore(db),
+      resolveMemoryProviderStore: () => new SqliteMemoryProviderStore(db),
       resolveConfigurationStore: () => new SqliteConfigurationStore(db),
       withTransaction: callback => db.transaction().execute(callback),
       resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,

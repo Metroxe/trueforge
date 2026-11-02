@@ -7,11 +7,12 @@ import {
   isWebSearchEnabledForTenant,
   type IConfigurationStore,
 } from '../db/configurationStore';
+import type { IMemoryProviderStore } from '../db/memoryProviderStore';
 import type { ISandboxEnvironmentStore } from '../db/sandboxEnvironmentStore';
 import type { WithTransaction } from '../db/transaction';
 import type { IUserStore } from '../db/userStore';
 import type { IWebSearchProviderStore } from '../db/webSearchProviderStore';
-import { isMemoryOfferedToTenant } from '../memory/availability';
+import { hasConfiguredMemoryProvider } from '../memory/providers';
 import { getCapabilitiesRoute } from '../routes/capabilityRoutes';
 import { isLocalSandboxFallbackEnabled } from '../sandbox/localRuntime';
 import { DEFAULT_SANDBOX_ENVIRONMENT_NAME, type SandboxEnvironmentVersionStatus } from '../schemas/sandboxEnvironment';
@@ -34,18 +35,19 @@ function skillDisabledReason(status: SandboxEnvironmentVersionStatus | undefined
  *
  * Catalog sections need a deployment that owns its own catalogs; the tenant switches
  * (web search, memory) only need the admin role, so a TrueFoundry tenant admin reaches
- * them while provider editing stays with the platform. In TrueFoundry mode memory also
- * needs the env settings to offer it to the tenant.
+ * them while provider editing stays with the platform. In TrueFoundry mode the memory
+ * section also needs the platform's provider, which the env offers per tenant.
  */
 export function settingsCapability({
   isAdmin,
   ownsCatalogs,
-  memoryOffered,
+  hasMemoryProvider,
 }: {
   isAdmin: boolean;
   /** False in TrueFoundry mode, where the platform owns the provider catalogs. */
   ownsCatalogs: boolean;
-  memoryOffered: boolean;
+  /** In TrueFoundry mode, true when the platform's env offers memory to the tenant. */
+  hasMemoryProvider: boolean;
 }) {
   const canManageProviders = ownsCatalogs && isAdmin;
   const catalogSection = { enabled: canManageProviders, manage_providers: canManageProviders };
@@ -55,7 +57,7 @@ export function settingsCapability({
     skills: catalogSection,
     sandbox_providers: catalogSection,
     web_search: { enabled: isAdmin, manage_providers: canManageProviders },
-    memory_providers: { enabled: isAdmin && (ownsCatalogs || memoryOffered), manage_providers: canManageProviders },
+    memory_providers: { enabled: isAdmin && (ownsCatalogs || hasMemoryProvider), manage_providers: canManageProviders },
   };
 }
 
@@ -63,6 +65,7 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
   sandboxEnvironmentStore: ISandboxEnvironmentStore<TTransaction>;
   resolveWebSearchProviderStore: (c: Context) => IWebSearchProviderStore<TTransaction>;
   resolveConfigurationStore: (c: Context) => IConfigurationStore<TTransaction>;
+  resolveMemoryProviderStore: (c: Context) => IMemoryProviderStore<TTransaction>;
   userStore: IUserStore;
   withTransaction: WithTransaction<TTransaction>;
   logger: Logger;
@@ -82,7 +85,7 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
       hasTrueFoundrySandboxProviderConfig() ||
       status === 'ready' ||
       (defaultEnv === undefined && isLocalSandboxFallbackEnabled());
-    const [hasProvider, tenantAllowsWebSearch, tenantAllowsMemory] = await Promise.all([
+    const [hasProvider, tenantAllowsWebSearch, tenantAllowsMemory, hasMemoryProvider] = await Promise.all([
       hasConfiguredWebSearchProvider({
         tenant_id: requestContext.tenant_id,
         store: deps.resolveWebSearchProviderStore(c),
@@ -95,9 +98,12 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
         tenant_id: requestContext.tenant_id,
         store: deps.resolveConfigurationStore(c),
       }),
+      hasConfiguredMemoryProvider({
+        tenant_id: requestContext.tenant_id,
+        store: deps.resolveMemoryProviderStore(c),
+      }),
     ]);
 
-    const memoryOffered = isMemoryOfferedToTenant({ tenant_id: requestContext.tenant_id });
     const webSearchResponse: { enabled: boolean; reason?: string } = {
       enabled: true,
     };
@@ -116,10 +122,10 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
           settings: settingsCapability({
             isAdmin: hasAdminRole(requestContext),
             ownsCatalogs: areCatalogSettingsAvailable(),
-            memoryOffered,
+            hasMemoryProvider,
           }),
           web_search: webSearchResponse,
-          ...(!memoryOffered
+          ...(!hasMemoryProvider
             ? {}
             : {
                 memory: tenantAllowsMemory

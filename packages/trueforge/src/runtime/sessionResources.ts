@@ -21,13 +21,14 @@ import {
   type IConfigurationStore,
 } from '../db/configurationStore';
 import type { IMcpServerStore, IMcpServerWithAuthStore } from '../db/mcpServerStore';
+import type { IMemoryProviderStore } from '../db/memoryProviderStore';
 import type { IModelProviderStore } from '../db/modelProviderStore';
 import type { ISandboxEnvironmentStore } from '../db/sandboxEnvironmentStore';
 import type { ISandboxProviderStore } from '../db/sandboxProviderStore';
 import type { ISkillStore } from '../db/skillStore';
 import type { TurnMetadata } from '../db/turnMetadata';
 import type { IWebSearchProviderStore } from '../db/webSearchProviderStore';
-import { isMemoryOfferedToTenant } from '../memory/availability';
+import { hasConfiguredMemoryProvider } from '../memory/providers';
 import { LocalSandboxProvider } from '../sandbox/local/provider/LocalSandboxProvider';
 import { getCachedLocalSandboxSupport, isLocalSandboxFallbackEnabled } from '../sandbox/localRuntime';
 import {
@@ -273,6 +274,7 @@ export async function validateAgentSpec({
   sandboxProviderStore,
   sandboxEnvironmentStore,
   webSearchProviderStore,
+  memoryProviderStore,
   configurationStore,
   previousSpec,
 }: {
@@ -285,6 +287,7 @@ export async function validateAgentSpec({
   sandboxProviderStore: ISandboxProviderStore;
   sandboxEnvironmentStore: ISandboxEnvironmentStore;
   webSearchProviderStore: IWebSearchProviderStore;
+  memoryProviderStore: IMemoryProviderStore;
   configurationStore: IConfigurationStore;
   /** Spec already saved on this session or agent; undefined when creating. */
   previousSpec: AgentSpec | undefined;
@@ -372,17 +375,18 @@ export async function validateAgentSpec({
     }
   }
 
-  // Gates turning memory on; a spec saved with it on can still be edited after the switch flips.
+  // Same gates as web search: a spec saved with memory on keeps it after the switch or provider changes.
   if (spec.config.memory.enabled && previousSpec?.config.memory.enabled !== true) {
-    if (!isMemoryOfferedToTenant({ tenant_id })) {
-      throw new HTTPException(422, { message: 'memory cannot be enabled because it is not available for this tenant' });
-    }
     const tenantAllows = await isMemoryEnabledForTenant({ tenant_id, store: configurationStore });
     if (!tenantAllows) {
       throw new HTTPException(422, {
         message:
           'memory cannot be enabled because it is disabled for this tenant - an admin can re-enable it in settings',
       });
+    }
+    const hasProvider = await hasConfiguredMemoryProvider({ tenant_id, store: memoryProviderStore });
+    if (!hasProvider) {
+      throw new HTTPException(422, { message: 'memory is enabled but no memory provider is configured' });
     }
   }
 }

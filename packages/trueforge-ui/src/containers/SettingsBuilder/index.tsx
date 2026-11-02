@@ -66,7 +66,7 @@ const TruefoundrySettingsBuilder = ({ headerStart }: { headerStart?: ReactNode }
   // The tab also hosts the tenant switch, so a catalog with no web-search provider
   // list still shows it whenever the host wires the configuration port.
   const hasWebSearch = catalog?.webSearchCatalog != null || configuration != null;
-  const hasMemory = configuration != null;
+  const hasMemory = catalog?.memoryCatalog != null || configuration != null;
 
   const closeSettings = useCallback(() => {
     track(AnalyticsEvents.Settings.CLOSED, { section });

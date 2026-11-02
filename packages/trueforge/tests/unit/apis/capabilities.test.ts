@@ -11,18 +11,14 @@ import { OidcAuthenticator } from '../../../src/auth/oidcAuthenticator';
 import { StandaloneAuthenticator } from '../../../src/auth/standaloneAuthenticator';
 import type { OIDCConfig } from '../../../src/config';
 import type { IConfigurationStore } from '../../../src/db/configurationStore';
+import type { IMemoryProviderStore } from '../../../src/db/memoryProviderStore';
 import type { ISandboxEnvironmentStore, SandboxEnvironmentWithVersion } from '../../../src/db/sandboxEnvironmentStore';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { EmptyUserStore, type IUserStore } from '../../../src/db/userStore';
 import type { IWebSearchProviderStore } from '../../../src/db/webSearchProviderStore';
-import { isMemoryOfferedToTenant } from '../../../src/memory/availability';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { SandboxEnvironmentVersionStatus } from '../../../src/schemas/sandboxEnvironment';
 import { TrueFoundryUserStore } from '../../../src/truefoundry/TrueFoundryUserStore';
-
-jest.mock('../../../src/memory/availability', () => ({
-  isMemoryOfferedToTenant: jest.fn(() => true),
-}));
 
 const silentLogger = createLogger({ silent: true });
 
@@ -104,17 +100,33 @@ describe('capabilities routers', () => {
     webSearchStore,
     tenantWebSearchEnabled = true,
     tenantMemoryEnabled = true,
+    hasMemoryProvider = true,
     userStore = new EmptyUserStore(),
   }: {
     authenticator?: Authenticator;
     webSearchStore?: IWebSearchProviderStore;
     tenantWebSearchEnabled?: boolean;
     tenantMemoryEnabled?: boolean;
+    hasMemoryProvider?: boolean;
     userStore?: IUserStore;
   } = {}): OpenAPIHono {
     const db = createSqliteDb(':memory:');
     const emptyWebSearchStore: IWebSearchProviderStore = {
       getProvider: () => Promise.resolve(undefined),
+      upsertProvider: () => Promise.reject(new Error('not used')),
+    };
+    const memoryStore: IMemoryProviderStore = {
+      getProvider: tenantId =>
+        Promise.resolve(
+          hasMemoryProvider
+            ? {
+                tenant_id: tenantId,
+                manifest: { type: 'zep', auth: { api_key: 'zep-test-key' } },
+                created_at: '2026-01-01T00:00:00.000Z',
+                updated_at: '2026-01-01T00:00:00.000Z',
+              }
+            : undefined,
+        ),
       upsertProvider: () => Promise.reject(new Error('not used')),
     };
     const configurationStore: IConfigurationStore = {
@@ -132,6 +144,7 @@ describe('capabilities routers', () => {
         sandboxEnvironmentStore: mockDefaultEnvStore(),
         resolveWebSearchProviderStore: () => webSearchStore ?? emptyWebSearchStore,
         resolveConfigurationStore: () => configurationStore,
+        resolveMemoryProviderStore: () => memoryStore,
         userStore,
         withTransaction: (() => {
           const run = <T>(callback: (trx: never) => Promise<T>): Promise<T> =>
@@ -227,10 +240,9 @@ describe('capabilities routers', () => {
     });
   });
 
-  it('omits memory but keeps memory providers open in OSS when the env does not offer memory', async () => {
+  it('omits memory but keeps memory providers open in OSS until a provider is configured', async () => {
     disableOidcAuth();
-    jest.mocked(isMemoryOfferedToTenant).mockReturnValueOnce(false);
-    const router = makeRouter();
+    const router = makeRouter({ hasMemoryProvider: false });
 
     const response = await router.request('/');
     expect(response.status).toBe(200);
@@ -242,26 +254,26 @@ describe('capabilities routers', () => {
   });
 
   it('maps memory providers 1:1 to web search: OSS always open, TrueFoundry mode follows the env', () => {
-    const memoryProviders = (input: { isAdmin: boolean; ownsCatalogs: boolean; memoryOffered: boolean }) =>
+    const memoryProviders = (input: { isAdmin: boolean; ownsCatalogs: boolean; hasMemoryProvider: boolean }) =>
       settingsCapability(input).memory_providers;
 
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: true, memoryOffered: false })).toEqual({
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: true, hasMemoryProvider: false })).toEqual({
       enabled: true,
       manage_providers: true,
     });
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, memoryOffered: false })).toEqual({
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: false })).toEqual({
       enabled: false,
       manage_providers: false,
     });
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, memoryOffered: true })).toEqual({
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: true })).toEqual({
       enabled: true,
       manage_providers: false,
     });
-    expect(memoryProviders({ isAdmin: false, ownsCatalogs: true, memoryOffered: true })).toEqual({
+    expect(memoryProviders({ isAdmin: false, ownsCatalogs: true, hasMemoryProvider: true })).toEqual({
       enabled: false,
       manage_providers: false,
     });
-    expect(settingsCapability({ isAdmin: true, ownsCatalogs: false, memoryOffered: true }).web_search).toEqual({
+    expect(settingsCapability({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: true }).web_search).toEqual({
       enabled: true,
       manage_providers: false,
     });
@@ -443,11 +455,22 @@ describe('capabilities routers', () => {
         upsertConfiguration: () => Promise.reject(new Error('not used')),
         getOrCreateConfiguration: () => Promise.reject(new Error('not used')),
       };
+      const zepMemoryStore: IMemoryProviderStore = {
+        getProvider: tenantId =>
+          Promise.resolve({
+            tenant_id: tenantId,
+            manifest: { type: 'zep', auth: { api_key: 'zep-test-key' } },
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-01T00:00:00.000Z',
+          }),
+        upsertProvider: () => Promise.reject(new Error('not used')),
+      };
       const router = withAuth(
         createCapabilitiesRouter({
           sandboxEnvironmentStore: mockDefaultEnvStore(),
           resolveWebSearchProviderStore: () => emptyWebSearchStore,
           resolveConfigurationStore: () => allOnConfigurationStore,
+          resolveMemoryProviderStore: () => zepMemoryStore,
           userStore: new EmptyUserStore(),
           withTransaction: (() => {
             const run = <T>(callback: (trx: never) => Promise<T>): Promise<T> =>

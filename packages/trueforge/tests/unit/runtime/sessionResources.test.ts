@@ -6,12 +6,12 @@ import type { ISkillStore } from '../../../src/db/skillStore';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteConfigurationStore } from '../../../src/db/sqlite/configuration-store/SqliteConfigurationStore';
 import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
+import { SqliteMemoryProviderStore } from '../../../src/db/sqlite/memory-provider-store/SqliteMemoryProviderStore';
 import { SqliteModelProviderStore } from '../../../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-environment-store/SqliteSandboxEnvironmentStore';
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
 import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkillStore';
 import { SqliteWebSearchProviderStore } from '../../../src/db/sqlite/web-search-provider-store/SqliteWebSearchProviderStore';
-import { isMemoryOfferedToTenant } from '../../../src/memory/availability';
 import { getModelDetails, localSandboxSessionSegment, validateAgentSpec } from '../../../src/runtime/sessionResources';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { ReasoningEffort } from '../../../src/schemas/modelProvider';
@@ -19,10 +19,6 @@ import { hasConfiguredWebSearchProvider } from '../../../src/websearch/providers
 
 jest.mock('../../../src/websearch/providers', () => ({
   hasConfiguredWebSearchProvider: jest.fn(() => Promise.resolve(false)),
-}));
-
-jest.mock('../../../src/memory/availability', () => ({
-  isMemoryOfferedToTenant: jest.fn(() => true),
 }));
 
 describe('localSandboxSessionSegment', () => {
@@ -76,6 +72,7 @@ describe('validateAgentSpec', () => {
       sandboxProviderStore: new SqliteSandboxProviderStore(db),
       sandboxEnvironmentStore: new SqliteSandboxEnvironmentStore(db),
       webSearchProviderStore: new SqliteWebSearchProviderStore(db),
+      memoryProviderStore: new SqliteMemoryProviderStore(db),
       configurationStore: new SqliteConfigurationStore(db),
       previousSpec: undefined,
     };
@@ -407,9 +404,8 @@ describe('validateAgentSpec', () => {
     ).resolves.toBeUndefined();
   });
 
-  it('rejects turning memory on when the deployment does not offer it to the tenant', async () => {
+  it('rejects turning memory on when no memory provider is configured', async () => {
     const stores = await setup();
-    jest.mocked(isMemoryOfferedToTenant).mockReturnValueOnce(false);
     await expect(
       validateAgentSpec({
         spec: AgentSpecSchema.parse({
@@ -423,12 +419,16 @@ describe('validateAgentSpec', () => {
       }),
     ).rejects.toMatchObject({
       status: 422,
-      message: expect.stringContaining('memory cannot be enabled because it is not available for this tenant'),
+      message: expect.stringContaining('memory is enabled but no memory provider is configured'),
     } satisfies Partial<HTTPException>);
   });
 
-  it('admits memory on when the tenant has no stored configuration', async () => {
+  it('admits memory on with a provider when the tenant has no stored configuration', async () => {
     const stores = await setup();
+    await stores.memoryProviderStore.upsertProvider({
+      tenant_id: 'default',
+      manifest: { type: 'zep', auth: { api_key: 'zep-test-key' } },
+    });
     await expect(
       validateAgentSpec({
         spec: AgentSpecSchema.parse({

@@ -10,4 +10,4 @@ Add `config.memory.enabled` on agent specs so builders can opt an agent into lon
 
 Add a tenant-wide memory switch to `/api/v1/settings/configuration` and a Memory settings section. While it is off, capabilities report memory as unavailable and saving a spec that turns `config.memory` on is rejected with 422.
 
-Memory is offered only with `TRUEFOUNDRY_MEMORY_ENABLED=true`, to tenants in `TRUEFOUNDRY_MEMORY_TENANT_ALLOWLIST` (unset or empty: every tenant). When it is not offered, capabilities omit `memory` and the UI hides every memory setting.
+Add memory providers, mirroring web search providers: a Zep catalog at `/api/v1/catalogs/memory-providers` and a per-tenant provider at `/api/v1/settings/memory-providers`, managed from Settings → Memory in OSS. In TrueFoundry mode the provider comes from `TRUEFOUNDRY_MEMORY_*` env (allowlisted tenants only) and cannot be changed. Without a provider, capabilities omit `memory` and the UI hides every memory setting.

@@ -51,7 +51,7 @@ const MemoryCapabilitySchema = z
     enabled: z.boolean().describe('Whether agents may turn memory on: the tenant allows it.'),
     reason: z.string().optional().describe('Present when memory is unavailable. Explains why.'),
   })
-  .describe('Present only when memory is offered to this tenant; absent means memory settings are hidden.')
+  .describe('Present only when the tenant has a memory provider; absent means memory settings are hidden.')
   .openapi('MemoryCapability');
 
 const SessionSharingCapabilitySchema = z

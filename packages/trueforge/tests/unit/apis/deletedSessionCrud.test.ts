@@ -14,6 +14,7 @@ import { SqliteAgentStore } from '../../../src/db/sqlite/agent-store/SqliteAgent
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteConfigurationStore } from '../../../src/db/sqlite/configuration-store/SqliteConfigurationStore';
 import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
+import { SqliteMemoryProviderStore } from '../../../src/db/sqlite/memory-provider-store/SqliteMemoryProviderStore';
 import { SqliteModelProviderStore } from '../../../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-environment-store/SqliteSandboxEnvironmentStore';
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
@@ -45,6 +46,7 @@ describe('public CRUD after session deletion', () => {
     const sandboxProviderStore = new SqliteSandboxProviderStore(db);
     const sandboxEnvironmentStore = new SqliteSandboxEnvironmentStore(db);
     const webSearchProviderStore = new SqliteWebSearchProviderStore(db);
+    const memoryProviderStore = new SqliteMemoryProviderStore(db);
     const configurationStore = new SqliteConfigurationStore(db);
     const app = new OpenAPIHono();
 
@@ -64,6 +66,7 @@ describe('public CRUD after session deletion', () => {
         resolveSandboxProviderStore: () => sandboxProviderStore,
         sandboxEnvironmentStore,
         resolveWebSearchProviderStore: () => webSearchProviderStore,
+        resolveMemoryProviderStore: () => memoryProviderStore,
         resolveConfigurationStore: () => configurationStore,
         redis: createClient(),
         requestReplyRouter: new RequestReplyRouter(),

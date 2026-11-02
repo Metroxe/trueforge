@@ -21,6 +21,7 @@ import { SqliteAgentStore } from '../../../src/db/sqlite/agent-store/SqliteAgent
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteConfigurationStore } from '../../../src/db/sqlite/configuration-store/SqliteConfigurationStore';
 import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
+import { SqliteMemoryProviderStore } from '../../../src/db/sqlite/memory-provider-store/SqliteMemoryProviderStore';
 import { SqliteModelProviderStore } from '../../../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-environment-store/SqliteSandboxEnvironmentStore';
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
@@ -80,6 +81,7 @@ describe('sessions HTTP agent binding', () => {
   let agentStore: SqliteAgentStore;
   let configurationStore: SqliteConfigurationStore;
   let webSearchProviderStore: SqliteWebSearchProviderStore;
+  let memoryProviderStore: SqliteMemoryProviderStore;
   let sessionStore: SqliteSessionStore;
   let sessionMetricsStore: SqliteSessionMetricsStore;
   let sessionDeps: SessionsRouterDeps<Transaction<Database>>;
@@ -99,6 +101,7 @@ describe('sessions HTTP agent binding', () => {
     const sandboxProviderStore = new SqliteSandboxProviderStore(db);
     const sandboxEnvironmentStore = new SqliteSandboxEnvironmentStore(db);
     webSearchProviderStore = new SqliteWebSearchProviderStore(db);
+    memoryProviderStore = new SqliteMemoryProviderStore(db);
     configurationStore = new SqliteConfigurationStore(db);
     agentStore = new SqliteAgentStore(db);
 
@@ -136,6 +139,7 @@ describe('sessions HTTP agent binding', () => {
       resolveSandboxProviderStore: () => sandboxProviderStore,
       sandboxEnvironmentStore,
       resolveWebSearchProviderStore: () => webSearchProviderStore,
+      resolveMemoryProviderStore: () => memoryProviderStore,
       resolveConfigurationStore: () => configurationStore,
       redis: createClient(),
       requestReplyRouter: new RequestReplyRouter(),

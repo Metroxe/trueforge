@@ -884,6 +884,55 @@ export interface WebSearchCatalogServer<
   updateWebSearchProvider(req: TUpdate): Promise<TProvider>;
 }
 
+// ---------------------------------------------------------------------------
+// Memory providers catalog — public rows omit credentials; writes accept them
+// ---------------------------------------------------------------------------
+
+export interface MemoryProviderCatalogEntry {
+  id: string;
+  name: string;
+  type: string;
+}
+
+/** Connected memory provider row (settings/memory). No raw `apiKey`. */
+export interface MemoryProviderBase {
+  id: string;
+  name: string;
+  catalogId: string;
+  isConnected: boolean;
+  serverUrl?: string;
+}
+
+export interface CreateMemoryProviderRequest {
+  /** `MemoryProviderCatalogEntry.id` used to create this memory provider. */
+  catalogId: string;
+  name: string;
+  type: string;
+  apiKey: string;
+  /** Omit for the provider's hosted default. */
+  serverUrl?: string;
+}
+
+export interface UpdateMemoryProviderRequest {
+  id: string;
+  /** Omit to keep the existing key; send a value to set/rotate. */
+  apiKey?: string;
+  /** Omit for the provider's hosted default. */
+  serverUrl?: string;
+}
+
+export interface MemoryCatalogServer<
+  TProvider extends MemoryProviderBase = MemoryProviderBase,
+  TCatalogEntry extends MemoryProviderCatalogEntry = MemoryProviderCatalogEntry,
+  TCreate extends CreateMemoryProviderRequest = CreateMemoryProviderRequest,
+  TUpdate extends UpdateMemoryProviderRequest = UpdateMemoryProviderRequest,
+> {
+  getMemoryProviderCatalog(): Promise<TCatalogEntry[]>;
+  listMemoryProviders(): Promise<TProvider[]>;
+  createMemoryProvider(req: TCreate): Promise<TProvider>;
+  updateMemoryProvider(req: TUpdate): Promise<TProvider>;
+}
+
 /** Host-facing selector / compose aliases (trueforge-ui public names). */
 export type ModelSelection = ModelSelectorEntry;
 export type AgentSkill = SkillSelectorEntry;
@@ -902,6 +951,7 @@ export interface CatalogServer<
   TSkillCatalog extends SkillCatalogServer = SkillCatalogServer,
   TSandboxCatalog extends SandboxCatalogServer = SandboxCatalogServer,
   TWebSearchCatalog extends WebSearchCatalogServer = WebSearchCatalogServer,
+  TMemoryCatalog extends MemoryCatalogServer = MemoryCatalogServer,
 > {
   modelCatalog: TModelCatalog;
   connectorCatalog: TConnectorCatalog;
@@ -911,6 +961,8 @@ export interface CatalogServer<
   sandboxCatalog?: TSandboxCatalog;
   /** Optional — omit when the host has no web-search settings surface. */
   webSearchCatalog?: TWebSearchCatalog;
+  /** Optional — omit when the host has no memory provider settings surface. */
+  memoryCatalog?: TMemoryCatalog;
 }
 
 /** One tenant-wide switch. */
