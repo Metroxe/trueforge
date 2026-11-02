@@ -11,6 +11,7 @@ describe("ServerClient", () => {
 
         const rawResponseBody = {
             data: {
+                memory: { enabled: true },
                 sandbox: { enabled: true },
                 session_sharing: { enabled: true },
                 settings: { enabled: true },
@@ -30,6 +31,9 @@ describe("ServerClient", () => {
         const response = await client.server.getCapabilities();
         expect(response).toEqual({
             data: {
+                memory: {
+                    enabled: true,
+                },
                 sandbox: {
                     enabled: true,
                 },

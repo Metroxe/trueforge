@@ -9,6 +9,7 @@ export type AgentRuntimeConfigDrawerProps = {
   spec: AgentSpec;
   sandboxAvailable: boolean;
   webSearchAvailable?: boolean;
+  memoryAvailable?: boolean;
   onChange: (spec: AgentSpec) => void;
   onClose: () => void;
 };
@@ -18,6 +19,7 @@ export function AgentRuntimeConfigDrawer({
   spec,
   sandboxAvailable,
   webSearchAvailable = false,
+  memoryAvailable = false,
   onChange,
   onClose,
 }: AgentRuntimeConfigDrawerProps) {
@@ -38,6 +40,7 @@ export function AgentRuntimeConfigDrawer({
         spec={spec}
         sandboxAvailable={sandboxAvailable}
         webSearchAvailable={webSearchAvailable}
+        memoryAvailable={memoryAvailable}
         onChange={onChange}
       />
     </SideDrawer>

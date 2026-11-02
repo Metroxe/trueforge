@@ -29,6 +29,14 @@ const WebSearchCapabilitySchema = z
   })
   .openapi('WebSearchCapability');
 
+const MemoryCapabilitySchema = z
+  .object({
+    enabled: z
+      .boolean()
+      .describe('Whether agents can turn on `config.memory`: memory is enabled and the tenant is allowlisted.'),
+  })
+  .openapi('MemoryCapability');
+
 const SessionSharingCapabilitySchema = z
   .object({
     enabled: z
@@ -45,6 +53,7 @@ const CapabilitiesDataSchema = z
     skill: SkillCapabilitySchema,
     settings: SettingsCapabilitySchema,
     web_search: WebSearchCapabilitySchema,
+    memory: MemoryCapabilitySchema,
     session_sharing: SessionSharingCapabilitySchema,
   })
   .openapi('CapabilitiesData');

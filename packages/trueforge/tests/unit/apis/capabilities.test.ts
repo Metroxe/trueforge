@@ -14,9 +14,14 @@ import type { ISandboxEnvironmentStore, SandboxEnvironmentWithVersion } from '..
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { EmptyUserStore, type IUserStore } from '../../../src/db/userStore';
 import type { IWebSearchProviderStore } from '../../../src/db/webSearchProviderStore';
+import { isMemoryEnabledForTenant } from '../../../src/memory/availability';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { SandboxEnvironmentVersionStatus } from '../../../src/schemas/sandboxEnvironment';
 import { TrueFoundryUserStore } from '../../../src/truefoundry/TrueFoundryUserStore';
+
+jest.mock('../../../src/memory/availability', () => ({
+  isMemoryEnabledForTenant: jest.fn(() => false),
+}));
 
 const silentLogger = createLogger({ silent: true });
 
@@ -119,6 +124,7 @@ describe('capabilities routers', () => {
         },
         settings: { enabled: true },
         web_search: { enabled: false },
+        memory: { enabled: false },
         session_sharing: { enabled: false },
       },
     });
@@ -144,6 +150,16 @@ describe('capabilities routers', () => {
     expect(await response.json()).toMatchObject({
       data: { web_search: { enabled: true } },
     });
+  });
+
+  it('reports memory enabled when memory is available for the tenant', async () => {
+    disableOidcAuth();
+    jest.mocked(isMemoryEnabledForTenant).mockReturnValueOnce(true);
+    const router = makeRouter();
+
+    const response = await router.request('/');
+    expect(await response.json()).toMatchObject({ data: { memory: { enabled: true } } });
+    expect(isMemoryEnabledForTenant).toHaveBeenCalledWith('default');
   });
 
   it('reports sharing with users only when a user source is configured', async () => {
@@ -177,6 +193,7 @@ describe('capabilities routers', () => {
         skill: { enabled: true },
         settings: { enabled: true },
         web_search: { enabled: false },
+        memory: { enabled: false },
         session_sharing: { enabled: false },
       },
     });
@@ -195,6 +212,7 @@ describe('capabilities routers', () => {
         skill: { enabled: true },
         settings: { enabled: true },
         web_search: { enabled: false },
+        memory: { enabled: false },
         session_sharing: { enabled: false },
       },
     });
@@ -344,6 +362,7 @@ describe('capabilities routers', () => {
           },
           settings: { enabled: true },
           web_search: { enabled: false },
+          memory: { enabled: false },
           session_sharing: { enabled: false },
         },
       });
@@ -361,6 +380,7 @@ describe('capabilities routers', () => {
           },
           settings: { enabled: false },
           web_search: { enabled: false },
+          memory: { enabled: false },
           session_sharing: { enabled: false },
         },
       });

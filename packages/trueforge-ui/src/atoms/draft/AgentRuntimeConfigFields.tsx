@@ -18,6 +18,7 @@ export type AgentRuntimeConfigFieldsProps = {
   value: AgentRuntimeConfig;
   sandboxAvailable: boolean;
   webSearchAvailable?: boolean;
+  memoryAvailable?: boolean;
   hasSkills: boolean;
   disabled?: boolean;
   showCapabilities?: boolean;
@@ -61,6 +62,7 @@ export function AgentRuntimeConfigFields({
   value,
   sandboxAvailable,
   webSearchAvailable = false,
+  memoryAvailable = false,
   hasSkills,
   disabled = false,
   showCapabilities = true,
@@ -151,12 +153,17 @@ export function AgentRuntimeConfigFields({
         update: enabled => ({ ...value, webSearch: { enabled } }),
       }
     : null;
-  const memoryField: RuntimeSwitchField = {
-    label: 'Memory',
-    description: 'Remember details from your past chats.',
-    checked: value.memory?.enabled ?? false,
-    update: enabled => ({ ...value, memory: { enabled } }),
-  };
+  const memoryEnabled = value.memory?.enabled ?? false;
+  // Kept visible while on so an agent saved before memory became unavailable can still be switched off.
+  const memoryField: RuntimeSwitchField | null =
+    memoryAvailable || memoryEnabled
+      ? {
+          label: 'Memory',
+          description: 'Remember details from your past chats.',
+          checked: memoryEnabled,
+          update: enabled => ({ ...value, memory: { enabled } }),
+        }
+      : null;
   const sandboxField: RuntimeSwitchField = {
     label: 'Sandbox',
     description: 'Provide an isolated environment for code, files, and skills.',
@@ -291,7 +298,7 @@ export function AgentRuntimeConfigFields({
           />
         </label>
         {webSearchField != null ? switchField({ field: webSearchField, className: cn('py-4', rowClassName) }) : null}
-        {switchField({ field: memoryField, className: cn('py-4', rowClassName) })}
+        {memoryField != null ? switchField({ field: memoryField, className: cn('py-4', rowClassName) }) : null}
         <section className="py-4">
           {switchField({ field: sandboxField, className: rowClassName })}
           <div className={`mt-3 border-l-2 border-primary-button-bg/50 pl-3 ${sandboxEnabled ? '' : 'opacity-50'}`}>
@@ -405,7 +412,7 @@ export function AgentRuntimeConfigFields({
       </label>
       {[
         ...(webSearchField != null ? [webSearchField] : []),
-        memoryField,
+        ...(memoryField != null ? [memoryField] : []),
         ...runtimeFields,
         ...(showCapabilities ? capabilityFields : []),
       ].map(field => switchField({ field }))}

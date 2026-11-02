@@ -6,6 +6,7 @@ import type { ISandboxEnvironmentStore } from '../db/sandboxEnvironmentStore';
 import type { WithTransaction } from '../db/transaction';
 import type { IUserStore } from '../db/userStore';
 import type { IWebSearchProviderStore } from '../db/webSearchProviderStore';
+import { isMemoryEnabledForTenant } from '../memory/availability';
 import { getCapabilitiesRoute } from '../routes/capabilityRoutes';
 import { isLocalSandboxFallbackEnabled } from '../sandbox/localRuntime';
 import { DEFAULT_SANDBOX_ENVIRONMENT_NAME, type SandboxEnvironmentVersionStatus } from '../schemas/sandboxEnvironment';
@@ -57,6 +58,7 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
           skill: sandboxEnabled ? { enabled: true } : { enabled: false, reason: skillDisabledReason(status) },
           settings: { enabled: settingsEnabled },
           web_search: { enabled: webSearchEnabled },
+          memory: { enabled: isMemoryEnabledForTenant(requestContext.tenant_id) },
           session_sharing: { enabled: deps.userStore.supportsUserLookup },
         },
       },
