@@ -9,7 +9,7 @@ from ..core.unchecked_base_model import UncheckedBaseModel
 
 class MemoryCapability(UncheckedBaseModel):
     """
-    Present only when memory is offered to this tenant; absent means memory settings are hidden.
+    Present only when the tenant has a memory provider; absent means memory settings are hidden.
     """
 
     enabled: bool = pydantic.Field()
