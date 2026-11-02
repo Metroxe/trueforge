@@ -32,14 +32,19 @@ describe('runtimeConfigSummary', () => {
     });
   });
 
-  it('includes memory defaulting to off', () => {
-    expect(runtimeConfigSummary({}).find(entry => entry.label === 'memory')).toEqual({
+  it('includes memory defaulting to off when the host offers it', () => {
+    expect(runtimeConfigSummary({}, { memoryOffered: true }).find(entry => entry.label === 'memory')).toEqual({
       label: 'memory',
       value: 'off',
     });
-    expect(runtimeConfigSummary({ memory: { enabled: true } }).find(entry => entry.label === 'memory')).toEqual({
-      label: 'memory',
-      value: 'on',
-    });
+    expect(
+      runtimeConfigSummary({ memory: { enabled: true } }, { memoryOffered: true }).find(
+        entry => entry.label === 'memory',
+      ),
+    ).toEqual({ label: 'memory', value: 'on' });
+  });
+
+  it('omits memory when the host does not offer it', () => {
+    expect(runtimeConfigSummary({ memory: { enabled: true } }).map(entry => entry.label)).not.toContain('memory');
   });
 });

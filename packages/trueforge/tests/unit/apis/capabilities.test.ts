@@ -15,9 +15,14 @@ import type { ISandboxEnvironmentStore, SandboxEnvironmentWithVersion } from '..
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { EmptyUserStore, type IUserStore } from '../../../src/db/userStore';
 import type { IWebSearchProviderStore } from '../../../src/db/webSearchProviderStore';
+import { isMemoryOfferedToTenant } from '../../../src/memory/availability';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { SandboxEnvironmentVersionStatus } from '../../../src/schemas/sandboxEnvironment';
 import { TrueFoundryUserStore } from '../../../src/truefoundry/TrueFoundryUserStore';
+
+jest.mock('../../../src/memory/availability', () => ({
+  isMemoryOfferedToTenant: jest.fn(() => true),
+}));
 
 const silentLogger = createLogger({ silent: true });
 
@@ -220,6 +225,20 @@ describe('capabilities routers', () => {
         },
       },
     });
+  });
+
+  it('omits memory and closes its settings section when the deployment does not offer it', async () => {
+    disableOidcAuth();
+    jest.mocked(isMemoryOfferedToTenant).mockReturnValueOnce(false);
+    const router = makeRouter();
+
+    const response = await router.request('/');
+    expect(response.status).toBe(200);
+    const body: unknown = await response.json();
+    expect(body).toMatchObject({
+      data: { settings: { memory: { enabled: false, manage_providers: true } } },
+    });
+    expect(body).not.toHaveProperty('data.memory');
   });
 
   it('reports sharing with users only when a user source is configured', async () => {

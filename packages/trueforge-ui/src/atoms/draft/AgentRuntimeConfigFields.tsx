@@ -180,18 +180,24 @@ export function AgentRuntimeConfigFields({
     update: enabled => ({ ...value, webSearch: { enabled } }),
   };
   const memoryChecked = value.memory?.enabled ?? false;
-  const { locked: memoryLocked, offIsFinal: memoryOffIsFinal } = memoryGate({
+  const {
+    hidden: memoryHidden,
+    locked: memoryLocked,
+    offIsFinal: memoryOffIsFinal,
+  } = memoryGate({
     capabilities,
     enabled: memoryChecked,
   });
-  const memoryField: RuntimeSwitchField = {
-    label: 'Memory',
-    description: 'Remember details from your past chats.',
-    checked: memoryChecked,
-    disabled: memoryLocked,
-    ...(memoryLocked ? { disabledTooltip: capabilities?.memory?.reason ?? MEMORY_UNAVAILABLE_HINT } : {}),
-    update: enabled => ({ ...value, memory: { enabled } }),
-  };
+  const memoryField: RuntimeSwitchField | null = memoryHidden
+    ? null
+    : {
+        label: 'Memory',
+        description: 'Remember details from your past chats.',
+        checked: memoryChecked,
+        disabled: memoryLocked,
+        ...(memoryLocked ? { disabledTooltip: capabilities?.memory?.reason ?? MEMORY_UNAVAILABLE_HINT } : {}),
+        update: enabled => ({ ...value, memory: { enabled } }),
+      };
   const sandboxField: RuntimeSwitchField = {
     label: 'Sandbox',
     description: 'Provide an isolated environment for code, files, and skills.',
@@ -330,10 +336,12 @@ export function AgentRuntimeConfigFields({
           {switchField({ field: webSearchField, className: rowClassName })}
           {webSearchOffIsFinal ? <RowWarning>{WEB_SEARCH_ONE_WAY_OFF_HINT}</RowWarning> : null}
         </div>
-        <div className="py-4">
-          {switchField({ field: memoryField, className: rowClassName })}
-          {memoryOffIsFinal ? <RowWarning>{MEMORY_ONE_WAY_OFF_HINT}</RowWarning> : null}
-        </div>
+        {memoryField != null ? (
+          <div className="py-4">
+            {switchField({ field: memoryField, className: rowClassName })}
+            {memoryOffIsFinal ? <RowWarning>{MEMORY_ONE_WAY_OFF_HINT}</RowWarning> : null}
+          </div>
+        ) : null}
         <section className="py-4">
           {switchField({ field: sandboxField, className: rowClassName })}
           {sandboxAvailable && !sandboxEnabled ? (
@@ -459,9 +467,12 @@ export function AgentRuntimeConfigFields({
           }}
         />
       </label>
-      {[webSearchField, memoryField, ...runtimeFields, ...(showCapabilities ? capabilityFields : [])].map(field =>
-        switchField({ field }),
-      )}
+      {[
+        webSearchField,
+        ...(memoryField != null ? [memoryField] : []),
+        ...runtimeFields,
+        ...(showCapabilities ? capabilityFields : []),
+      ].map(field => switchField({ field }))}
     </div>
   );
 }

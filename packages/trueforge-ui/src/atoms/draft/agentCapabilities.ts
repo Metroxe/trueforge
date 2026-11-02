@@ -39,17 +39,20 @@ export const MEMORY_UNAVAILABLE_HINT = 'Memory is turned off for this tenant';
 export const MEMORY_ONE_WAY_OFF_HINT =
   'Memory is off for this tenant. Turning it off here is final until an admin turns it back on.';
 
-/** Like `webSearchGate`, but a host that does not report memory leaves it open. */
+/**
+ * How a draft should present the memory row. A host that does not report memory does not
+ * offer it, so the row stays hidden until capabilities load and say otherwise.
+ */
 export function memoryGate({
   capabilities,
   enabled,
 }: {
   capabilities: { memory?: { enabled: boolean } | undefined } | null;
   enabled: boolean;
-}): { locked: boolean; offIsFinal: boolean } {
-  if (capabilities == null) {
-    return { locked: false, offIsFinal: false };
+}): { hidden: boolean; locked: boolean; offIsFinal: boolean } {
+  const memory = capabilities?.memory;
+  if (memory === undefined) {
+    return { hidden: true, locked: false, offIsFinal: false };
   }
-  const available = capabilities.memory?.enabled !== false;
-  return { locked: !available && !enabled, offIsFinal: enabled && !available };
+  return { hidden: false, locked: !memory.enabled && !enabled, offIsFinal: enabled && !memory.enabled };
 }

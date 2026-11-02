@@ -231,11 +231,19 @@ describe('AgentRuntimeConfigFields', () => {
     expect(missing).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('toggles memory', () => {
-    const onChange = vi.fn();
-    renderRuntimeFields({ onChange });
+  it('hides memory when the host does not offer it', async () => {
+    renderRuntimeFields({ webSearch: { enabled: true } });
 
-    const memorySwitch = screen.getByRole('switch', { name: 'Memory' });
+    expect(await screen.findByRole('switch', { name: 'Web search' })).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: 'Memory' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Memory')).not.toBeInTheDocument();
+  });
+
+  it('toggles memory when the host offers it', async () => {
+    const onChange = vi.fn();
+    renderRuntimeFields({ memory: { enabled: true }, onChange });
+
+    const memorySwitch = await screen.findByRole('switch', { name: 'Memory' });
     expect(memorySwitch).not.toBeDisabled();
     expect(memorySwitch).toHaveAttribute('aria-checked', 'false');
 
@@ -260,7 +268,7 @@ describe('AgentRuntimeConfigFields', () => {
     const onChange = vi.fn();
     renderRuntimeFields({ value: { memory: { enabled: true } }, memory: { enabled: false }, onChange });
 
-    const memorySwitch = screen.getByRole('switch', { name: 'Memory' });
+    const memorySwitch = await screen.findByRole('switch', { name: 'Memory' });
     expect(memorySwitch).toBeEnabled();
     expect(memorySwitch).toBeChecked();
     expect(await screen.findByText(/Memory is off for this tenant/)).toBeInTheDocument();

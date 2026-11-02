@@ -11,6 +11,7 @@ import { SqliteSandboxEnvironmentStore } from '../../../src/db/sqlite/sandbox-en
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
 import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkillStore';
 import { SqliteWebSearchProviderStore } from '../../../src/db/sqlite/web-search-provider-store/SqliteWebSearchProviderStore';
+import { isMemoryOfferedToTenant } from '../../../src/memory/availability';
 import { getModelDetails, localSandboxSessionSegment, validateAgentSpec } from '../../../src/runtime/sessionResources';
 import { setCachedLocalSandboxSupport } from '../../../src/sandbox/localRuntime';
 import type { ReasoningEffort } from '../../../src/schemas/modelProvider';
@@ -18,6 +19,10 @@ import { hasConfiguredWebSearchProvider } from '../../../src/websearch/providers
 
 jest.mock('../../../src/websearch/providers', () => ({
   hasConfiguredWebSearchProvider: jest.fn(() => Promise.resolve(false)),
+}));
+
+jest.mock('../../../src/memory/availability', () => ({
+  isMemoryOfferedToTenant: jest.fn(() => true),
 }));
 
 describe('localSandboxSessionSegment', () => {
@@ -400,6 +405,26 @@ describe('validateAgentSpec', () => {
         previousSpec: memorySpec,
       }),
     ).resolves.toBeUndefined();
+  });
+
+  it('rejects turning memory on when the deployment does not offer it to the tenant', async () => {
+    const stores = await setup();
+    jest.mocked(isMemoryOfferedToTenant).mockReturnValueOnce(false);
+    await expect(
+      validateAgentSpec({
+        spec: AgentSpecSchema.parse({
+          model: { name: 'test-provider/test-model' },
+          instructions: 'test',
+          config: { memory: { enabled: true } },
+        }),
+        tenant_id: 'default',
+        created_by_subject_id: 'test-subject',
+        ...stores,
+      }),
+    ).rejects.toMatchObject({
+      status: 422,
+      message: expect.stringContaining('memory cannot be enabled because it is not available for this tenant'),
+    } satisfies Partial<HTTPException>);
   });
 
   it('admits memory on when the tenant has no stored configuration', async () => {

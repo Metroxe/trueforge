@@ -27,6 +27,7 @@ import type { ISandboxProviderStore } from '../db/sandboxProviderStore';
 import type { ISkillStore } from '../db/skillStore';
 import type { TurnMetadata } from '../db/turnMetadata';
 import type { IWebSearchProviderStore } from '../db/webSearchProviderStore';
+import { isMemoryOfferedToTenant } from '../memory/availability';
 import { LocalSandboxProvider } from '../sandbox/local/provider/LocalSandboxProvider';
 import { getCachedLocalSandboxSupport, isLocalSandboxFallbackEnabled } from '../sandbox/localRuntime';
 import {
@@ -373,6 +374,9 @@ export async function validateAgentSpec({
 
   // Gates turning memory on; a spec saved with it on can still be edited after the switch flips.
   if (spec.config.memory.enabled && previousSpec?.config.memory.enabled !== true) {
+    if (!isMemoryOfferedToTenant({ tenant_id })) {
+      throw new HTTPException(422, { message: 'memory cannot be enabled because it is not available for this tenant' });
+    }
     const tenantAllows = await isMemoryEnabledForTenant({ tenant_id, store: configurationStore });
     if (!tenantAllows) {
       throw new HTTPException(422, {

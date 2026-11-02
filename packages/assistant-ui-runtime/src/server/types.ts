@@ -481,7 +481,7 @@ export interface AgentBuilderCapabilitiesResponse {
     skill: { enabled: boolean; reason?: string };
     settings?: SettingsCapability;
     webSearch?: { enabled: boolean; reason?: string };
-    /** Whether agents may turn memory on; `reason` explains a locked toggle. */
+    /** Absent when the host does not offer memory, which hides memory settings; `reason` explains a locked toggle. */
     memory?: { enabled: boolean; reason?: string };
     /** Present when the host reports session sharing; `enabled` gates invite-by-user. */
     sessionSharing?: { enabled: boolean };

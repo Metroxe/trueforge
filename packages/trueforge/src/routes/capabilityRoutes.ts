@@ -51,6 +51,7 @@ const MemoryCapabilitySchema = z
     enabled: z.boolean().describe('Whether agents may turn memory on: the tenant allows it.'),
     reason: z.string().optional().describe('Present when memory is unavailable. Explains why.'),
   })
+  .describe('Present only when memory is offered to this tenant; absent means memory settings are hidden.')
   .openapi('MemoryCapability');
 
 const SessionSharingCapabilitySchema = z
@@ -69,7 +70,7 @@ const CapabilitiesDataSchema = z
     skill: SkillCapabilitySchema,
     settings: SettingsCapabilitySchema,
     web_search: WebSearchCapabilitySchema,
-    memory: MemoryCapabilitySchema,
+    memory: MemoryCapabilitySchema.optional(),
     session_sharing: SessionSharingCapabilitySchema,
   })
   .openapi('CapabilitiesData');

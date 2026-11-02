@@ -252,6 +252,29 @@ describe('TruefoundrySettingsBuilder', () => {
     expect(await screen.findByText('Memory settings content')).toBeInTheDocument();
   });
 
+  it('hides memory when the host does not offer it to the tenant', async () => {
+    const sections = allSettingsSections(true);
+    const server = createMockAgentUIServer({
+      catalog: createMockCatalog({}),
+      configuration: {
+        getConfiguration: async () => ({ webSearch: { enabled: true }, memory: { enabled: true } }),
+        updateConfiguration: unavailable,
+      },
+      getCapabilities: async () => ({
+        data: {
+          sandbox: { enabled: true },
+          skill: { enabled: true },
+          settings: { ...sections, memory: { enabled: false, manageProviders: true } },
+        },
+      }),
+    });
+    render(<TestShell server={server} />);
+    await openSettings();
+
+    expect(await screen.findByRole('button', { name: 'Web search' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Memory' })).not.toBeInTheDocument();
+  });
+
   it('closes on Escape without leaking the event to a parent handler', async () => {
     const parentKeyDown = vi.fn();
     render(
