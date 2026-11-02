@@ -33,7 +33,7 @@ const SettingsCapabilitySchema = z
     skills: SettingsCapabilitySectionSchema,
     sandbox_providers: SettingsCapabilitySectionSchema,
     web_search: SettingsCapabilitySectionSchema,
-    memory: SettingsCapabilitySectionSchema,
+    memory_providers: SettingsCapabilitySectionSchema,
   })
   .openapi('SettingsCapability');
 

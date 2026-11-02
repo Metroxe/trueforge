@@ -111,7 +111,7 @@ const TruefoundrySettingsBuilder = ({ headerStart }: { headerStart?: ReactNode }
       mounted.push({ id: 'web-search', label: 'Web search', icon: 'search', capability: 'webSearch' });
     }
     if (hasMemory) {
-      mounted.push({ id: 'memory', label: 'Memory', icon: 'brain', capability: 'memory' });
+      mounted.push({ id: 'memory', label: 'Memory', icon: 'brain', capability: 'memoryProviders' });
     }
     return mounted.filter(item => isSettingsSectionEnabled({ settings, section: item.capability }));
   }, [hasSkills, hasSandbox, hasWebSearch, hasMemory, settings]);

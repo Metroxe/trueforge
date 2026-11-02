@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import type { Configuration } from 'openid-client';
 import { createLogger } from 'winston';
-import { createCapabilitiesRouter } from '../../../src/apis/capabilities';
+import { createCapabilitiesRouter, settingsCapability } from '../../../src/apis/capabilities';
 import type { Authenticator } from '../../../src/auth/authenticator';
 import { resolveRequestContext } from '../../../src/auth/identity';
 import { createAuthMiddleware } from '../../../src/auth/middleware';
@@ -32,7 +32,7 @@ const ALL_SETTINGS_ON = {
   skills: { enabled: true, manage_providers: true },
   sandbox_providers: { enabled: true, manage_providers: true },
   web_search: { enabled: true, manage_providers: true },
-  memory: { enabled: true, manage_providers: true },
+  memory_providers: { enabled: true, manage_providers: true },
 };
 
 const ALL_SETTINGS_OFF = {
@@ -41,7 +41,7 @@ const ALL_SETTINGS_OFF = {
   skills: { enabled: false, manage_providers: false },
   sandbox_providers: { enabled: false, manage_providers: false },
   web_search: { enabled: false, manage_providers: false },
-  memory: { enabled: false, manage_providers: false },
+  memory_providers: { enabled: false, manage_providers: false },
 };
 
 const NO_PROVIDER_REASON = 'Web search needs a provider, which is not configured.';
@@ -227,7 +227,7 @@ describe('capabilities routers', () => {
     });
   });
 
-  it('omits memory and closes its settings section when the deployment does not offer it', async () => {
+  it('omits memory but keeps memory providers open in OSS when the env does not offer memory', async () => {
     disableOidcAuth();
     jest.mocked(isMemoryOfferedToTenant).mockReturnValueOnce(false);
     const router = makeRouter();
@@ -236,9 +236,35 @@ describe('capabilities routers', () => {
     expect(response.status).toBe(200);
     const body: unknown = await response.json();
     expect(body).toMatchObject({
-      data: { settings: { memory: { enabled: false, manage_providers: true } } },
+      data: { settings: { memory_providers: { enabled: true, manage_providers: true } } },
     });
     expect(body).not.toHaveProperty('data.memory');
+  });
+
+  it('maps memory providers 1:1 to web search: OSS always open, TrueFoundry mode follows the env', () => {
+    const memoryProviders = (input: { isAdmin: boolean; ownsCatalogs: boolean; memoryOffered: boolean }) =>
+      settingsCapability(input).memory_providers;
+
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: true, memoryOffered: false })).toEqual({
+      enabled: true,
+      manage_providers: true,
+    });
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, memoryOffered: false })).toEqual({
+      enabled: false,
+      manage_providers: false,
+    });
+    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, memoryOffered: true })).toEqual({
+      enabled: true,
+      manage_providers: false,
+    });
+    expect(memoryProviders({ isAdmin: false, ownsCatalogs: true, memoryOffered: true })).toEqual({
+      enabled: false,
+      manage_providers: false,
+    });
+    expect(settingsCapability({ isAdmin: true, ownsCatalogs: false, memoryOffered: true }).web_search).toEqual({
+      enabled: true,
+      manage_providers: false,
+    });
   });
 
   it('reports sharing with users only when a user source is configured', async () => {

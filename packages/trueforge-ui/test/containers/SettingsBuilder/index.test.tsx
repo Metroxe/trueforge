@@ -264,7 +264,7 @@ describe('TruefoundrySettingsBuilder', () => {
         data: {
           sandbox: { enabled: true },
           skill: { enabled: true },
-          settings: { ...sections, memory: { enabled: false, manageProviders: true } },
+          settings: { ...sections, memoryProviders: { enabled: false, manageProviders: true } },
         },
       }),
     });

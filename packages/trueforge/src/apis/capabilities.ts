@@ -1,12 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { Logger } from 'winston';
-import {
-  areCatalogSettingsAvailable,
-  hasAdminRole,
-  type RequestContext,
-  type ResolveRequestContext,
-} from '../auth/identity';
+import { areCatalogSettingsAvailable, hasAdminRole, type ResolveRequestContext } from '../auth/identity';
 import {
   isMemoryEnabledForTenant,
   isWebSearchEnabledForTenant,
@@ -39,18 +34,20 @@ function skillDisabledReason(status: SandboxEnvironmentVersionStatus | undefined
  *
  * Catalog sections need a deployment that owns its own catalogs; the tenant switches
  * (web search, memory) only need the admin role, so a TrueFoundry tenant admin reaches
- * them while provider editing stays with the platform. Memory also needs the deployment
- * to offer it to the tenant.
+ * them while provider editing stays with the platform. In TrueFoundry mode memory also
+ * needs the env settings to offer it to the tenant.
  */
-function settingsCapability({
-  requestContext,
+export function settingsCapability({
+  isAdmin,
+  ownsCatalogs,
   memoryOffered,
 }: {
-  requestContext: Pick<RequestContext, 'roles'>;
+  isAdmin: boolean;
+  /** False in TrueFoundry mode, where the platform owns the provider catalogs. */
+  ownsCatalogs: boolean;
   memoryOffered: boolean;
 }) {
-  const isAdmin = hasAdminRole(requestContext);
-  const canManageProviders = areCatalogSettingsAvailable() && isAdmin;
+  const canManageProviders = ownsCatalogs && isAdmin;
   const catalogSection = { enabled: canManageProviders, manage_providers: canManageProviders };
   return {
     model_providers: catalogSection,
@@ -58,7 +55,7 @@ function settingsCapability({
     skills: catalogSection,
     sandbox_providers: catalogSection,
     web_search: { enabled: isAdmin, manage_providers: canManageProviders },
-    memory: { enabled: isAdmin && memoryOffered, manage_providers: canManageProviders },
+    memory_providers: { enabled: isAdmin && (ownsCatalogs || memoryOffered), manage_providers: canManageProviders },
   };
 }
 
@@ -116,7 +113,11 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
         data: {
           sandbox: { enabled: sandboxEnabled },
           skill: sandboxEnabled ? { enabled: true } : { enabled: false, reason: skillDisabledReason(status) },
-          settings: settingsCapability({ requestContext, memoryOffered }),
+          settings: settingsCapability({
+            isAdmin: hasAdminRole(requestContext),
+            ownsCatalogs: areCatalogSettingsAvailable(),
+            memoryOffered,
+          }),
           web_search: webSearchResponse,
           ...(!memoryOffered
             ? {}

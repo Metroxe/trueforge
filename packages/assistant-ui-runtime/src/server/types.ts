@@ -469,7 +469,7 @@ export interface SettingsCapability {
   skills?: SettingsCapabilitySection;
   sandboxProviders?: SettingsCapabilitySection;
   webSearch?: SettingsCapabilitySection;
-  memory?: SettingsCapabilitySection;
+  memoryProviders?: SettingsCapabilitySection;
 }
 
 /**
