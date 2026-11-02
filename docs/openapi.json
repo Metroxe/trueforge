@@ -491,6 +491,9 @@
       },
       "CapabilitiesData": {
         "properties": {
+          "memory": {
+            "$ref": "#/components/schemas/MemoryCapability"
+          },
           "sandbox": {
             "$ref": "#/components/schemas/SandboxCapability"
           },
@@ -512,6 +515,7 @@
           "skill",
           "settings",
           "web_search",
+          "memory",
           "session_sharing"
         ],
         "type": "object"
@@ -983,18 +987,25 @@
       "ConfigurationManifest": {
         "additionalProperties": false,
         "properties": {
+          "memory": {
+            "$ref": "#/components/schemas/MemoryConfiguration"
+          },
           "web_search": {
             "$ref": "#/components/schemas/WebSearchConfiguration"
           }
         },
         "required": [
-          "web_search"
+          "web_search",
+          "memory"
         ],
         "type": "object"
       },
       "ConfigurationManifestPatch": {
         "additionalProperties": false,
         "properties": {
+          "memory": {
+            "$ref": "#/components/schemas/MemoryConfiguration"
+          },
           "web_search": {
             "$ref": "#/components/schemas/WebSearchConfiguration"
           }
@@ -2813,6 +2824,22 @@
         ],
         "type": "string"
       },
+      "MemoryCapability": {
+        "properties": {
+          "enabled": {
+            "description": "Whether agents may turn memory on: the tenant allows it.",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Present when memory is unavailable. Explains why.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
       "MemoryConfig": {
         "default": {
           "enabled": false
@@ -2824,6 +2851,19 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "MemoryConfiguration": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "description": "Whether agents in this tenant may remember details from past chats.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
         "type": "object"
       },
       "MetricsUnit": {
