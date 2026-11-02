@@ -4822,7 +4822,7 @@
           "mcp_servers": {
             "$ref": "#/components/schemas/SettingsCapabilitySection"
           },
-          "memory": {
+          "memory_providers": {
             "$ref": "#/components/schemas/SettingsCapabilitySection"
           },
           "model_providers": {
@@ -4844,7 +4844,7 @@
           "skills",
           "sandbox_providers",
           "web_search",
-          "memory"
+          "memory_providers"
         ],
         "type": "object"
       },
