@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import { createConfigurationRouter } from '../../../src/apis/configuration';
 import { STANDALONE_REQUEST_CONTEXT } from '../../../src/auth/identity';
 import type { IConfigurationStore } from '../../../src/db/configurationStore';
@@ -21,21 +22,21 @@ async function createRouter() {
     resolveConfigurationStore: () => store,
     resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
   });
-  return { router, store };
+  return { router, store, db };
 }
 
 describe('settings configuration router', () => {
-  it('GET reports everything enabled and materialises the row on first read', async () => {
+  it('GET reports the defaults (memory off) and materialises the row on first read', async () => {
     const { router, store } = await createRouter();
 
     const response = await router.request('/');
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      data: { manifest: { web_search: { enabled: true }, memory: { enabled: true } }, updated_at: expect.any(String) },
+      data: { manifest: { web_search: { enabled: true }, memory: { enabled: false } }, updated_at: expect.any(String) },
     });
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toEqual({
       tenant_id: STANDALONE_REQUEST_CONTEXT.tenant_id,
-      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: true }, memory: { enabled: false } },
       updated_at: expect.any(String),
     });
   });
@@ -46,13 +47,13 @@ describe('settings configuration router', () => {
     const patched = await router.request('/', patchInit({ web_search: { enabled: false } }));
     expect(patched.status).toBe(200);
     expect(await patched.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: false } } },
     });
 
     const get = await router.request('/');
     expect(get.status).toBe(200);
     expect(await get.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: false } } },
     });
   });
 
@@ -62,7 +63,7 @@ describe('settings configuration router', () => {
     const patched = await router.request('/', patchInit({ web_search: { enabled: false } }));
     expect(patched.status).toBe(200);
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: false } },
     });
   });
 
@@ -74,18 +75,36 @@ describe('settings configuration router', () => {
     expect(reEnabled.status).toBe(200);
 
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: true }, memory: { enabled: false } },
     });
   });
 
-  it('PATCH turns memory off without touching web search', async () => {
+  it('reads a row saved before the memory switch existed as memory off, and PATCH keeps web search', async () => {
+    const { router, store, db } = await createRouter();
+    await sql`
+      INSERT INTO configuration (tenant_id, manifest, updated_at)
+      VALUES (${STANDALONE_REQUEST_CONTEXT.tenant_id}, jsonb(${JSON.stringify({ web_search: { enabled: false } })}), ${new Date().toISOString()})
+    `.execute(db);
+
+    const get = await router.request('/');
+    expect(await get.json()).toMatchObject({
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: false } } },
+    });
+
+    await router.request('/', patchInit({ memory: { enabled: true } }));
+    await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
+      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+    });
+  });
+
+  it('PATCH turns memory on without touching web search', async () => {
     const { router, store } = await createRouter();
 
-    const patched = await router.request('/', patchInit({ memory: { enabled: false } }));
+    const patched = await router.request('/', patchInit({ memory: { enabled: true } }));
     expect(patched.status).toBe(200);
 
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: true }, memory: { enabled: false } },
+      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
     });
   });
 
@@ -97,7 +116,7 @@ describe('settings configuration router', () => {
     expect(empty.status).toBe(200);
 
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: false } },
     });
   });
 
@@ -111,7 +130,7 @@ describe('settings configuration router', () => {
       getOrCreateConfiguration: async input => {
         await store.upsertConfiguration({
           tenant_id,
-          manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+          manifest: { web_search: { enabled: false }, memory: { enabled: false } },
         });
         return await store.getOrCreateConfiguration(input);
       },
@@ -124,10 +143,10 @@ describe('settings configuration router', () => {
     const response = await router.request('/');
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false }, memory: { enabled: true } } },
+      data: { manifest: { web_search: { enabled: false }, memory: { enabled: false } } },
     });
     await expect(store.getConfiguration(tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: false } },
     });
   });
 

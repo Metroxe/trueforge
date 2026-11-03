@@ -105,6 +105,10 @@ describe('agents router', () => {
       tenant_id: 'default',
       manifest: { type: 'zep', auth: { api_key: 'zep-test-key' } },
     });
+    await new SqliteConfigurationStore(db).upsertConfiguration({
+      tenant_id: 'default',
+      manifest: { web_search: { enabled: true }, memory: { enabled: true } },
+    });
     const agentStore = new SqliteAgentStore(db);
     router = createAgentsRouter({
       resolveAgentStore: () => agentStore,

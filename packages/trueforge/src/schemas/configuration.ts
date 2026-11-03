@@ -53,8 +53,23 @@ export type ConfigurationManifestPatch = z.infer<typeof ConfigurationManifestPat
 export type Configuration = z.infer<typeof ConfigurationSchema>;
 export type UpdateConfigurationRequest = z.infer<typeof UpdateConfigurationRequestSchema>;
 
-/** Written the first time a tenant is read or updated, so existing tenants keep every feature on. */
+/**
+ * Written the first time a tenant is read or updated. Existing features stay on; memory starts
+ * off until an admin turns it on, since it sends chat content to the memory provider.
+ */
 export const DEFAULT_CONFIGURATION_MANIFEST: ConfigurationManifest = {
   web_search: { enabled: true },
-  memory: { enabled: true },
+  memory: { enabled: false },
 };
+
+/** Rows saved before a switch existed lack its key; they read as that switch's default. */
+const StoredConfigurationManifestSchema = z
+  .object({
+    web_search: WebSearchConfigurationSchema,
+    memory: MemoryConfigurationSchema.default(() => DEFAULT_CONFIGURATION_MANIFEST.memory),
+  })
+  .strict();
+
+export function parseStoredConfigurationManifest(manifest: unknown): ConfigurationManifest {
+  return StoredConfigurationManifestSchema.parse(manifest);
+}

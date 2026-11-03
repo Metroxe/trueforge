@@ -42,6 +42,7 @@ const ALL_SETTINGS_OFF = {
 
 const NO_PROVIDER_REASON = 'Web search needs a provider, which is not configured.';
 const TENANT_OFF_REASON = 'Web search is turned off for this tenant - an admin can turn it back on in settings.';
+const MEMORY_TENANT_OFF_REASON = 'Memory is turned off for this tenant - an admin can turn it back on in settings.';
 
 let mockActiveDefaultStatus: SandboxEnvironmentVersionStatus | undefined;
 let mockLatestDefaultStatus: SandboxEnvironmentVersionStatus | undefined;
@@ -234,7 +235,7 @@ describe('capabilities routers', () => {
       data: {
         memory: {
           enabled: false,
-          reason: 'Memory is turned off for this tenant - an admin can turn it back on in settings.',
+          reason: MEMORY_TENANT_OFF_REASON,
         },
       },
     });
@@ -496,7 +497,7 @@ describe('capabilities routers', () => {
           },
           settings: ALL_SETTINGS_ON,
           web_search: { enabled: false, reason: NO_PROVIDER_REASON },
-          memory: { enabled: true },
+          memory: { enabled: false, reason: MEMORY_TENANT_OFF_REASON },
           session_sharing: { enabled: false },
         },
       });
@@ -514,7 +515,7 @@ describe('capabilities routers', () => {
           },
           settings: ALL_SETTINGS_OFF,
           web_search: { enabled: false, reason: NO_PROVIDER_REASON },
-          memory: { enabled: true },
+          memory: { enabled: false, reason: MEMORY_TENANT_OFF_REASON },
           session_sharing: { enabled: false },
         },
       });

@@ -1,5 +1,5 @@
 import type { ExpressionBuilder, Kysely, Transaction } from 'kysely';
-import type { ConfigurationManifest } from '../../../schemas/configuration';
+import { parseStoredConfigurationManifest, type ConfigurationManifest } from '../../../schemas/configuration';
 import type {
   ConfigurationRecord,
   GetOrCreateConfigurationInput,
@@ -18,6 +18,10 @@ function recordColumns(eb: ExpressionBuilder<Database, 'configuration'>) {
   ];
 }
 
+function toRecord(row: ConfigurationRecord): ConfigurationRecord {
+  return { ...row, manifest: parseStoredConfigurationManifest(row.manifest) };
+}
+
 export class SqliteConfigurationStore implements IConfigurationStore<Transaction<Database>> {
   readonly #db: Kysely<Database>;
 
@@ -30,11 +34,12 @@ export class SqliteConfigurationStore implements IConfigurationStore<Transaction
     transaction?: Transaction<Database>,
   ): Promise<ConfigurationRecord | undefined> {
     const db = transaction ?? this.#db;
-    return await db
+    const row = await db
       .selectFrom('configuration')
       .select(recordColumns)
       .where('tenant_id', '=', tenantId)
       .executeTakeFirst();
+    return row === undefined ? undefined : toRecord(row);
   }
 
   async upsertConfiguration(
@@ -43,7 +48,7 @@ export class SqliteConfigurationStore implements IConfigurationStore<Transaction
   ): Promise<ConfigurationRecord> {
     const db = transaction ?? this.#db;
     const timestamp = nowIso();
-    return await db
+    const row = await db
       .insertInto('configuration')
       .values({
         tenant_id: input.tenant_id,
@@ -58,6 +63,7 @@ export class SqliteConfigurationStore implements IConfigurationStore<Transaction
       )
       .returning(recordColumns)
       .executeTakeFirstOrThrow();
+    return toRecord(row);
   }
 
   async getOrCreateConfiguration(
@@ -76,13 +82,14 @@ export class SqliteConfigurationStore implements IConfigurationStore<Transaction
       .returning(recordColumns)
       .executeTakeFirst();
     if (inserted !== undefined) {
-      return inserted;
+      return toRecord(inserted);
     }
     // Lost the insert race: the row another writer stored wins.
-    return await db
+    const existing = await db
       .selectFrom('configuration')
       .select(recordColumns)
       .where('tenant_id', '=', input.tenant_id)
       .executeTakeFirstOrThrow();
+    return toRecord(existing);
   }
 }
