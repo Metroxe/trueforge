@@ -1,5 +1,4 @@
 import type { Kysely, Selectable, Transaction } from 'kysely';
-import { parseStoredConfigurationManifest } from '../../../schemas/configuration';
 import type {
   ConfigurationRecord,
   GetOrCreateConfigurationInput,
@@ -12,7 +11,7 @@ import type { ConfigurationTable, Database } from '../types';
 function toRecord(row: Selectable<ConfigurationTable>): ConfigurationRecord {
   return {
     tenant_id: row.tenant_id,
-    manifest: parseStoredConfigurationManifest(row.manifest),
+    manifest: row.manifest,
     updated_at: row.updated_at.toISOString(),
   };
 }

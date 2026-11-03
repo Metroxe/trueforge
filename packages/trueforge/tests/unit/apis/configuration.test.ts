@@ -5,6 +5,7 @@ import type { IConfigurationStore } from '../../../src/db/configurationStore';
 import { migrateSqliteToLatest } from '../../../src/db/migrateSqlite';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteConfigurationStore } from '../../../src/db/sqlite/configuration-store/SqliteConfigurationStore';
+import { up as backfillMemorySwitch } from '../../../src/db/sqlite/migrations/20261102_000001_configuration_memory_backfill';
 
 function patchInit(manifest: unknown): RequestInit {
   return {
@@ -79,21 +80,17 @@ describe('settings configuration router', () => {
     });
   });
 
-  it('reads a row saved before the memory switch existed as memory off, and PATCH keeps web search', async () => {
-    const { router, store, db } = await createRouter();
+  it('backfills memory off on rows saved before the switch existed, keeping their other switches', async () => {
+    const { store, db } = await createRouter();
     await sql`
       INSERT INTO configuration (tenant_id, manifest, updated_at)
       VALUES (${STANDALONE_REQUEST_CONTEXT.tenant_id}, jsonb(${JSON.stringify({ web_search: { enabled: false } })}), ${new Date().toISOString()})
     `.execute(db);
 
-    const get = await router.request('/');
-    expect(await get.json()).toMatchObject({
-      data: { manifest: { web_search: { enabled: false }, memory: { enabled: false } } },
-    });
+    await backfillMemorySwitch(db);
 
-    await router.request('/', patchInit({ memory: { enabled: true } }));
     await expect(store.getConfiguration(STANDALONE_REQUEST_CONTEXT.tenant_id)).resolves.toMatchObject({
-      manifest: { web_search: { enabled: false }, memory: { enabled: true } },
+      manifest: { web_search: { enabled: false }, memory: { enabled: false } },
     });
   });
 
