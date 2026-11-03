@@ -125,16 +125,14 @@ export function createCapabilitiesRouter<TTransaction>(deps: {
             hasMemoryProvider,
           }),
           web_search: webSearchResponse,
-          ...(!hasMemoryProvider
-            ? {}
-            : {
-                memory: tenantAllowsMemory
-                  ? { enabled: true }
-                  : {
-                      enabled: false,
-                      reason: 'Memory is turned off for this tenant - an admin can turn it back on in settings.',
-                    },
-              }),
+          ...(hasMemoryProvider && {
+            memory: tenantAllowsMemory
+              ? { enabled: true }
+              : {
+                  enabled: false,
+                  reason: 'Memory is turned off for this tenant - an admin can turn it back on in settings.',
+                },
+          }),
           session_sharing: { enabled: deps.userStore.supportsUserLookup },
         },
       },
