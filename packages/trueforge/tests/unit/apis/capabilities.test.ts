@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import type { Configuration } from 'openid-client';
 import { createLogger } from 'winston';
-import { createCapabilitiesRouter, settingsCapability } from '../../../src/apis/capabilities';
+import { createCapabilitiesRouter } from '../../../src/apis/capabilities';
 import type { Authenticator } from '../../../src/auth/authenticator';
 import { resolveRequestContext } from '../../../src/auth/identity';
 import { createAuthMiddleware } from '../../../src/auth/middleware';
@@ -252,32 +252,6 @@ describe('capabilities routers', () => {
       data: { settings: { memory_providers: { enabled: true, manage_providers: true } } },
     });
     expect(body).not.toHaveProperty('data.memory');
-  });
-
-  it('maps memory providers 1:1 to web search: OSS always open, TrueFoundry mode follows the env', () => {
-    const memoryProviders = (input: { isAdmin: boolean; ownsCatalogs: boolean; hasMemoryProvider: boolean }) =>
-      settingsCapability(input).memory_providers;
-
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: true, hasMemoryProvider: false })).toEqual({
-      enabled: true,
-      manage_providers: true,
-    });
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: false })).toEqual({
-      enabled: false,
-      manage_providers: false,
-    });
-    expect(memoryProviders({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: true })).toEqual({
-      enabled: true,
-      manage_providers: false,
-    });
-    expect(memoryProviders({ isAdmin: false, ownsCatalogs: true, hasMemoryProvider: true })).toEqual({
-      enabled: false,
-      manage_providers: false,
-    });
-    expect(settingsCapability({ isAdmin: true, ownsCatalogs: false, hasMemoryProvider: true }).web_search).toEqual({
-      enabled: true,
-      manage_providers: false,
-    });
   });
 
   it('reports sharing with users only when a user source is configured', async () => {

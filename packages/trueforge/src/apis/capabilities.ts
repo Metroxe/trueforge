@@ -38,7 +38,7 @@ function skillDisabledReason(status: SandboxEnvironmentVersionStatus | undefined
  * them while provider editing stays with the platform. In TrueFoundry mode the memory
  * section also needs the platform's provider, which the env offers per tenant.
  */
-export function settingsCapability({
+function settingsCapability({
   isAdmin,
   ownsCatalogs,
   hasMemoryProvider,
