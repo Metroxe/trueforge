@@ -375,7 +375,6 @@ export async function validateAgentSpec({
     }
   }
 
-  // Same gates as web search: a spec saved with memory on keeps it after the switch or provider changes.
   if (spec.config.memory.enabled && previousSpec?.config.memory.enabled !== true) {
     const tenantAllows = await isMemoryEnabledForTenant({ tenant_id, store: configurationStore });
     if (!tenantAllows) {
